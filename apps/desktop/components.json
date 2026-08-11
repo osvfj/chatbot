@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../packages/ui/src/styles/globals.css",
+    "baseColor": "stone",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@cafebot/ui/components",
+    "utils": "@cafebot/ui/lib/utils",
+    "ui": "@cafebot/ui/components",
+    "lib": "@cafebot/ui/lib",
+    "hooks": "@cafebot/ui/hooks"
+  }
+}

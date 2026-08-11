@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "oxc"],
+  "jsPlugins": ["./oxlint-plugins/cafebot.js"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "off",
+    "style": "off",
+    "pedantic": "off"
+  },
+  "rules": {
+    "no-explicit-any": "error",
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-restricted-types": [
+      "error",
+      {
+        "types": {
+          "Record<string, unknown>": {
+            "message": "Evita Record<string, unknown>: define un tipo explícito."
+          },
+          "Record<string, any>": {
+            "message": "Evita Record<string, any>: define un tipo explícito."
+          }
+        }
+      }
+    ],
+    "cafebot/no-record-string-unknown": "error",
+    "cafebot/no-unknown-assertions": "error",
+    "cafebot/no-typeof-guards": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.tsx"],
+      "plugins": ["react"],
+      "rules": {
+        "react/display-name": "off",
+        "react/jsx-max-depth": "off"
+      }
+    }
+  ]
+}

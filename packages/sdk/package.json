@@ -1,0 +1,16 @@
+{
+  "name": "@cafebot/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dominio compartido de Cafebot: catálogo de enfermedades, esquemas y tipos",
+  "main": "index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsgo -p tsconfig.json"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.106"
+  }
+}

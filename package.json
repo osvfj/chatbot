@@ -1,0 +1,27 @@
+{
+  "name": "cafebot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cafebot: asistente de detección de enfermedades del cafeto",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "package": "pnpm --filter @cafebot/desktop package",
+    "type-check": "pnpm -r type-check",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@effect/language-service": "0.87.2",
+    "@types/node": "26.2.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "oxfmt": "0.62.0",
+    "oxlint": "1.77.0",
+    "typescript": "7.0.2"
+  },
+  "packageManager": "pnpm@11.21.0"
+}

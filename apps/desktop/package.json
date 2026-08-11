@@ -1,0 +1,39 @@
+{
+  "name": "@cafebot/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cafebot Desktop App",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "type-check": "tsgo -p tsconfig.json",
+    "package": "electron-vite build && electron-builder --config electron-builder.config.ts",
+    "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\""
+  },
+  "dependencies": {
+    "@cafebot/sdk": "workspace:*",
+    "@cafebot/ui": "workspace:*",
+    "@effect/atom-react": "4.0.0-beta.106",
+    "@shadcn/react": "0.3.0",
+    "effect": "4.0.0-beta.106",
+    "lucide-react": "1.31.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "scheduler": "0.27.0",
+    "sonner": "2.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "26.2.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "5.2.0",
+    "electron": "43.3.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "5.0.0",
+    "tailwindcss": "4.3.3",
+    "vite": "7.3.6"
+  }
+}
