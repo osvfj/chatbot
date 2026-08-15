@@ -2,6 +2,7 @@ import { DateTime, Effect } from "effect";
 import { Atom } from "effect/unstable/reactivity";
 import { ChatMessage, DetectionResult } from "@cafebot/sdk";
 import { Api } from "../services/api";
+import { getStoredTheme, prefersDarkColorScheme } from "./theme";
 
 export type SectionId = "chat" | "gallery";
 
@@ -29,9 +30,9 @@ export const detectionsAtom = Atom.make<ReadonlyArray<DetectionCard>>([]).pipe(A
 
 export const suggestionsAtom = Atom.make<ReadonlyArray<string>>([]).pipe(Atom.keepAlive);
 
-export const darkModeAtom = Atom.make(
-  window.matchMedia("(prefers-color-scheme: dark)").matches,
-).pipe(Atom.keepAlive);
+export const darkModeAtom = Atom.make(getStoredTheme() ?? prefersDarkColorScheme()).pipe(
+  Atom.keepAlive,
+);
 
 export const sendMessageFn = Api.mutation("SendMessage").pipe(Atom.keepAlive);
 

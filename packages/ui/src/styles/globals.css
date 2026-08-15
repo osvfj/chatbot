@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@source "../components/**/*.{ts,tsx}";
+@source "../hooks/**/*.ts";
+@source "../lib/**/*.ts";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -43,10 +47,17 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-xs: 1px 1px 0 0 color-mix(in oklch, var(--foreground) 55%, transparent);
+  --shadow-sm: 2px 2px 0 0 color-mix(in oklch, var(--foreground) 55%, transparent);
+  --shadow: 3px 3px 0 0 color-mix(in oklch, var(--foreground) 60%, transparent);
+  --shadow-md: 4px 4px 0 0 color-mix(in oklch, var(--foreground) 60%, transparent);
+  --shadow-lg: 5px 5px 0 0 color-mix(in oklch, var(--foreground) 65%, transparent);
+  --shadow-xl: 7px 7px 0 0 color-mix(in oklch, var(--foreground) 65%, transparent);
+  --shadow-2xl: 9px 9px 0 0 color-mix(in oklch, var(--foreground) 70%, transparent);
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0px;
   --background: oklch(0.982 0.006 85);
   --foreground: oklch(0.3 0.045 55);
   --card: oklch(0.997 0.003 85);
@@ -62,8 +73,8 @@
   --accent: oklch(0.92 0.035 70);
   --accent-foreground: oklch(0.32 0.05 50);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.898 0.015 75);
-  --input: oklch(0.898 0.015 75);
+  --border: oklch(0.84 0.02 70);
+  --input: oklch(0.84 0.02 70);
   --ring: oklch(0.42 0.09 50);
   --chart-1: oklch(0.55 0.12 140);
   --chart-2: oklch(0.55 0.15 40);
@@ -96,8 +107,8 @@
   --accent: oklch(0.37 0.03 55);
   --accent-foreground: oklch(0.95 0.006 85);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 20%);
+  --input: oklch(1 0 0 / 26%);
   --ring: oklch(0.76 0.06 70);
   --chart-1: oklch(0.62 0.12 140);
   --chart-2: oklch(0.62 0.16 40);
@@ -116,7 +127,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/80;
   }
 
   body {

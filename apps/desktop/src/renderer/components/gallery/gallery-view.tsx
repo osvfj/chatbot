@@ -7,6 +7,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@cafebot/ui/components/empty";
+import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Spinner } from "@cafebot/ui/components/spinner";
 import { useGallery } from "../../lib/use-gallery";
 import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
@@ -20,9 +21,12 @@ export function GalleryView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Galería</h1>
-          <p className="text-sm text-muted-foreground">Fotos analizadas · {detections.length}</p>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger aria-label="Colapsar barra lateral" />
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">Galería</h1>
+            <p className="text-sm text-muted-foreground">Fotos analizadas · {detections.length}</p>
+          </div>
         </div>
         {isAnalyzing && (
           <span className="flex items-center gap-2 text-sm text-muted-foreground">

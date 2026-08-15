@@ -7,7 +7,7 @@
     "./globals.css": "./src/styles/globals.css",
     "./components/*": "./src/components/*.tsx",
     "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*"
+    "./hooks/*": "./src/hooks/*.ts"
   },
   "scripts": {
     "type-check": "tsgo -p tsconfig.json"
@@ -17,6 +17,7 @@
     "@shadcn/react": "0.3.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "effect": "4.0.0-beta.106",
     "lucide-react": "1.31.0",
     "shadcn": "4.16.2",
     "tailwind-merge": "3.6.0",

@@ -79,7 +79,7 @@ export function ChatInput({ onSend, onAttach, disabled, analyzing }: ChatInputPr
         />
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           disabled={busy}
           onClick={() => fileInputRef.current?.click()}
           aria-label="Adjuntar imagen"
@@ -95,11 +95,11 @@ export function ChatInput({ onSend, onAttach, disabled, analyzing }: ChatInputPr
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Describe un síntoma o pregunta sobre el café…"
-          className="max-h-40 min-h-10 flex-1 resize-none border-0 bg-transparent p-2 shadow-none focus-visible:ring-0"
+          className="max-h-40 min-h-9 flex-1 resize-none border-0 bg-transparent p-2 shadow-none focus-visible:ring-0"
           rows={1}
         />
         <Button
-          size="icon"
+          size="icon-lg"
           disabled={busy || value.trim().length === 0}
           onClick={() => submit(value)}
           aria-label="Enviar mensaje"
