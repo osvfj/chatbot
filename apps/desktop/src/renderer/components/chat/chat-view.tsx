@@ -1,19 +1,42 @@
 import { MessageSquarePlusIcon } from "lucide-react";
 import { Predicate } from "effect";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@cafebot/ui/components/button";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
 import { useChat } from "../../lib/use-chat";
 import { useGallery } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
+import { conversationUuidAtom } from "../../lib/atoms";
+import { useAtom } from "@effect/atom-react";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
 
-export function ChatView() {
+interface ChatViewProps {
+  readonly conversationId?: string;
+}
+
+export function ChatView({ conversationId }: ChatViewProps) {
   const m = useMessages();
+  const navigate = useNavigate();
+  const [, setConversationUuid] = useAtom(conversationUuidAtom);
   const { messages, isWaiting, appendUserMessage, sendReply, resetChat } = useChat();
   const { isAnalyzing, analyzeFile } = useGallery();
   const busy = isWaiting || isAnalyzing;
+
+  const ensureConversation = (): void => {
+    if (conversationId === undefined) {
+      const uuid = crypto.randomUUID();
+      setConversationUuid(uuid);
+      navigate({ to: "/chat/$uuid", params: { uuid } });
+    }
+  };
+
+  const handleNewConversation = (): void => {
+    setConversationUuid(null);
+    resetChat();
+    navigate({ to: "/chat" });
+  };
 
   const readAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -34,6 +57,7 @@ export function ChatView() {
     if (trimmed.length === 0 && attachments.length === 0) {
       return;
     }
+    ensureConversation();
     const attachmentData = await Promise.all(
       attachments.map(async (file) => ({
         name: file.name,
@@ -68,7 +92,7 @@ export function ChatView() {
                 variant="ghost"
                 size="icon"
                 disabled={busy}
-                onClick={resetChat}
+                onClick={handleNewConversation}
                 aria-label={m.tooltipNewConversation()}
               >
                 <MessageSquarePlusIcon className="size-4" />

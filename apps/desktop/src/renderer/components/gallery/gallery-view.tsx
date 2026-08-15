@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAtom } from "@effect/atom-react";
+import { useNavigate } from "@tanstack/react-router";
 import { ImageOffIcon } from "lucide-react";
 import {
   Empty,
@@ -11,14 +13,25 @@ import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Spinner } from "@cafebot/ui/components/spinner";
 import { useGallery } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
+import { conversationUuidAtom } from "../../lib/atoms";
 import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
 import { DetectionCard } from "./detection-card";
 import { DetectionDialog } from "./detection-dialog";
 
 export function GalleryView() {
   const m = useMessages();
+  const navigate = useNavigate();
+  const [conversationUuid] = useAtom(conversationUuidAtom);
   const { detections, isAnalyzing, removeDetection } = useGallery();
   const [selected, setSelected] = useState<DetectionCardModel | null>(null);
+
+  const goToChat = (): void => {
+    if (conversationUuid !== null) {
+      navigate({ to: "/chat/$uuid", params: { uuid: conversationUuid } });
+    } else {
+      navigate({ to: "/chat" });
+    }
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -63,7 +76,9 @@ export function GalleryView() {
           </div>
         )}
       </div>
-      {selected !== null && <DetectionDialog card={selected} onClose={() => setSelected(null)} />}
+      {selected !== null && (
+        <DetectionDialog card={selected} onClose={() => setSelected(null)} onGoToChat={goToChat} />
+      )}
     </div>
   );
 }

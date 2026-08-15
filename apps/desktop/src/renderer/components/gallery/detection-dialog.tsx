@@ -1,10 +1,13 @@
 import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
 import { formatPercent, severityLabel } from "../../lib/format";
 import { useMessages } from "../../lib/use-language";
+import { MessageCircleIcon } from "lucide-react";
+import { Button } from "@cafebot/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@cafebot/ui/components/dialog";
@@ -12,9 +15,10 @@ import {
 interface DetectionDialogProps {
   readonly card: DetectionCardModel;
   readonly onClose: () => void;
+  readonly onGoToChat: () => void;
 }
 
-export function DetectionDialog({ card, onClose }: DetectionDialogProps) {
+export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogProps) {
   const m = useMessages();
   const { detection } = card;
   const confidence = Math.round(detection.confidence * 100);
@@ -66,6 +70,12 @@ export function DetectionDialog({ card, onClose }: DetectionDialogProps) {
             </div>
           </div>
         </div>
+        <DialogFooter>
+          <Button onClick={onGoToChat}>
+            <MessageCircleIcon className="size-4" />
+            {m.galleryGoToChat()}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

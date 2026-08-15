@@ -5,8 +5,6 @@ import { ChatMessage, DetectionResult } from "@cafebot/sdk";
 import { Api } from "../services/api";
 import { getStoredTheme, prefersDarkColorScheme } from "./theme";
 
-export type SectionId = "chat" | "gallery";
-
 export interface DetectionCard {
   readonly detection: InstanceType<typeof DetectionResult>;
   readonly imageUrl: string;
@@ -20,7 +18,7 @@ export const welcomeMessage = new ChatMessage({
   sentAt: Effect.runSync(DateTime.now),
 });
 
-export const activeSectionAtom = Atom.make<SectionId>("chat").pipe(Atom.keepAlive);
+export const conversationUuidAtom = Atom.make<string | null>(null).pipe(Atom.keepAlive);
 
 export const messagesAtom = Atom.make<ReadonlyArray<InstanceType<typeof ChatMessage>>>([
   welcomeMessage,

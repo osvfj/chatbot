@@ -1,7 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useAtom, useAtomValue } from "@effect/atom-react";
-import { Equal } from "effect";
-import type { LucideIcon } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   CoffeeIcon,
   ImagesIcon,
@@ -23,31 +22,24 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@cafebot/ui/components/sidebar";
-import { activeSectionAtom, darkModeAtom, detectionsAtom, type SectionId } from "../../lib/atoms";
+import { conversationUuidAtom, darkModeAtom, detectionsAtom } from "../../lib/atoms";
 import { applyTheme, storeTheme } from "../../lib/theme";
 import { cycleLanguage, useLanguage, useMessages } from "../../lib/use-language";
 
-interface NavItem {
-  readonly id: SectionId;
-  readonly label: () => string;
-  readonly icon: LucideIcon;
-}
-
 export function AppSidebar() {
   const m = useMessages();
-  const [section, setSection] = useAtom(activeSectionAtom);
+  const [conversationUuid] = useAtom(conversationUuidAtom);
   const detections = useAtomValue(detectionsAtom);
   const [dark, setDark] = useAtom(darkModeAtom);
   const [language, setLanguage] = useLanguage();
+  const { pathname } = useLocation();
 
   useLayoutEffect(() => {
     applyTheme(dark);
   }, [dark]);
 
-  const navItems: ReadonlyArray<NavItem> = [
-    { id: "chat", label: () => m.navChat(), icon: MessageCircleIcon },
-    { id: "gallery", label: () => m.navGallery(), icon: ImagesIcon },
-  ];
+  const chatActive = pathname.startsWith("/chat");
+  const galleryActive = pathname.startsWith("/gallery");
 
   return (
     <Sidebar collapsible="icon">
@@ -66,22 +58,43 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
+              <SidebarMenuItem>
+                {conversationUuid === null ? (
                   <SidebarMenuButton
-                    tooltip={item.label()}
+                    tooltip={m.navChat()}
                     size="lg"
-                    isActive={Equal.equals(item.id)(section)}
-                    onClick={() => setSection(item.id)}
+                    isActive={chatActive}
+                    render={<Link to="/chat" />}
                   >
-                    <item.icon />
-                    <span>{item.label()}</span>
-                    {Equal.equals("gallery")(item.id) && detections.length > 0 && (
-                      <SidebarMenuBadge>{detections.length}</SidebarMenuBadge>
-                    )}
+                    <MessageCircleIcon />
+                    <span>{m.navChat()}</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                ) : (
+                  <SidebarMenuButton
+                    tooltip={m.navChat()}
+                    size="lg"
+                    isActive={chatActive}
+                    render={<Link to="/chat/$uuid" params={{ uuid: conversationUuid }} />}
+                  >
+                    <MessageCircleIcon />
+                    <span>{m.navChat()}</span>
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip={m.navGallery()}
+                  size="lg"
+                  isActive={galleryActive}
+                  render={<Link to="/gallery" />}
+                >
+                  <ImagesIcon />
+                  <span>{m.navGallery()}</span>
+                  {detections.length > 0 && (
+                    <SidebarMenuBadge>{detections.length}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

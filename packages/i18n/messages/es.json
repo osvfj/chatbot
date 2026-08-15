@@ -27,6 +27,7 @@
   "galleryEmptyTitle": "Sin análisis todavía",
   "galleryEmptyDescription": "Sube una foto de una hoja desde el chat y aparecerá aquí con su diagnóstico y nivel de confianza.",
   "galleryRemove": "Eliminar foto",
+  "galleryGoToChat": "Ir al chat",
   "galleryViewDetail": "Ver detalle de {disease}",
   "galleryDialogDescription": "{fileName} · {confidence}% de confianza · {severity}",
   "galleryDescription": "Descripción",

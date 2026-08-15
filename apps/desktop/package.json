@@ -21,6 +21,7 @@
     "@cafebot/ui": "workspace:*",
     "@effect/atom-react": "4.0.0-beta.106",
     "@shadcn/react": "0.3.0",
+    "@tanstack/react-router": "^1.170.29",
     "effect": "4.0.0-beta.106",
     "lucide-react": "1.31.0",
     "react": "19.2.8",
