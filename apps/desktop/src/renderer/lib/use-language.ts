@@ -75,5 +75,6 @@ export function useMessages() {
 
 export function cycleLanguage(language: Language): Language {
   const index = LANGUAGE_ORDER.indexOf(language);
-  return LANGUAGE_ORDER[(index + 1) % LANGUAGE_ORDER.length] ?? baseLocale;
+  const next = LANGUAGE_ORDER[(index + 1) % LANGUAGE_ORDER.length];
+  return Predicate.isUndefined(next) ? baseLocale : next;
 }

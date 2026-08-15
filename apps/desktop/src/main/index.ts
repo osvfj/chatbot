@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { Effect, Equal, Layer, ManagedRuntime } from "effect";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import { RpcServer } from "effect/unstable/rpc";
 import { app, BrowserWindow, MessageChannelMain, session, type MessagePortMain } from "electron";
 import { AllRpcs } from "../shared/rpc";
@@ -87,7 +87,7 @@ const createWindow = (bind: (port: IpcServerPort) => void): void => {
 app.whenReady().then(
   () => {
     session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-      callback(Equal.equals("media")(permission));
+      callback(permission === "media");
     });
 
     runtime.runPromise(RpcPortHandoff).then((handoff) => {

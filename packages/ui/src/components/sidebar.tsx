@@ -4,7 +4,7 @@ import * as React from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Equal, Predicate } from "effect";
+import { Predicate } from "effect";
 
 import { useIsMobile } from "@cafebot/ui/hooks/use-mobile";
 import { cn } from "@cafebot/ui/lib/utils";
@@ -309,9 +309,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
     }
     const rect = container.getBoundingClientRect();
     const side = container.getAttribute("data-side");
-    const widthPx = Equal.equals("left")(side)
-      ? event.clientX - rect.left
-      : rect.right - event.clientX;
+    const widthPx = side === "left" ? event.clientX - rect.left : rect.right - event.clientX;
     const widthRem = Math.min(
       SIDEBAR_RESIZE_MAX_WIDTH,
       Math.max(SIDEBAR_RESIZE_MIN_WIDTH, widthPx / 16),

@@ -1,5 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useAtom, useAtomValue } from "@effect/atom-react";
+import { Predicate } from "effect";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   CoffeeIcon,
@@ -59,7 +60,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
               <SidebarMenuItem>
-                {conversationUuid === null ? (
+                {Predicate.isNull(conversationUuid) ? (
                   <SidebarMenuButton
                     tooltip={m.navChat()}
                     size="lg"

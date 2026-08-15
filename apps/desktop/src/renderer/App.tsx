@@ -7,9 +7,10 @@ import { Route as indexRoute } from "./routes/index";
 import { Route as chatRoute } from "./routes/chat";
 import { Route as chatUuidRoute } from "./routes/chat.$uuid";
 import { Route as galleryRoute } from "./routes/gallery";
+import { Route as galleryUuidRoute } from "./routes/gallery.$uuid";
 
 const routeTree = rootRoute.addChildren([
-  appRoute.addChildren([indexRoute, chatRoute, chatUuidRoute, galleryRoute]),
+  appRoute.addChildren([indexRoute, chatRoute, chatUuidRoute, galleryRoute, galleryUuidRoute]),
 ]);
 
 const router = createRouter({

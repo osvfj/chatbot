@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { useAtom } from "@effect/atom-react";
 import { useNavigate } from "@tanstack/react-router";
 import { ImageOffIcon } from "lucide-react";
 import {
@@ -13,25 +11,12 @@ import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Spinner } from "@cafebot/ui/components/spinner";
 import { useGallery } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
-import { conversationUuidAtom } from "../../lib/atoms";
-import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
-import { DetectionCard } from "./detection-card";
-import { DetectionDialog } from "./detection-dialog";
+import { AlbumCard } from "./album-card";
 
 export function GalleryView() {
   const m = useMessages();
   const navigate = useNavigate();
-  const [conversationUuid] = useAtom(conversationUuidAtom);
-  const { detections, isAnalyzing, removeDetection } = useGallery();
-  const [selected, setSelected] = useState<DetectionCardModel | null>(null);
-
-  const goToChat = (): void => {
-    if (conversationUuid !== null) {
-      navigate({ to: "/chat/$uuid", params: { uuid: conversationUuid } });
-    } else {
-      navigate({ to: "/chat" });
-    }
-  };
+  const { albums, isAnalyzing } = useGallery();
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -41,7 +26,7 @@ export function GalleryView() {
           <div>
             <h1 className="text-lg font-semibold tracking-tight">{m.galleryHeader()}</h1>
             <p className="text-sm text-muted-foreground">
-              {m.gallerySubtitle({ count: detections.length })}
+              {m.gallerySubtitle({ count: albums.length })}
             </p>
           </div>
         </div>
@@ -52,8 +37,8 @@ export function GalleryView() {
           </span>
         )}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        {detections.length === 0 ? (
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-slim p-6">
+        {albums.length === 0 ? (
           <Empty className="h-full border-2 border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -65,20 +50,18 @@ export function GalleryView() {
           </Empty>
         ) : (
           <div className="columns-2 gap-4 md:columns-3 xl:columns-4">
-            {detections.map((card) => (
-              <DetectionCard
-                key={card.detection.id}
-                card={card}
-                onOpen={() => setSelected(card)}
-                onRemove={() => removeDetection(card.detection.id)}
+            {albums.map((album) => (
+              <AlbumCard
+                key={album.conversationUuid}
+                album={album}
+                onOpen={() =>
+                  navigate({ to: "/gallery/$uuid", params: { uuid: album.conversationUuid } })
+                }
               />
             ))}
           </div>
         )}
       </div>
-      {selected !== null && (
-        <DetectionDialog card={selected} onClose={() => setSelected(null)} onGoToChat={goToChat} />
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { useAtomValue } from "@effect/atom-react";
-import { Equal } from "effect";
+import { Predicate } from "effect";
 import { CameraIcon, FileImageIcon, PaperclipIcon, SendIcon, XIcon } from "lucide-react";
 import {
   Attachment,
@@ -67,11 +67,11 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
 
   const removeAttachment = (id: string): void => {
     setPending((current) => {
-      const attachment = current.find((item) => Equal.equals(id)(item.id));
-      if (attachment !== undefined) {
+      const attachment = current.find((item) => item.id === id);
+      if (Predicate.isNotUndefined(attachment)) {
         URL.revokeObjectURL(attachment.previewUrl);
       }
-      return current.filter((item) => !Equal.equals(id)(item.id));
+      return current.filter((item) => item.id !== id);
     });
   };
 
@@ -125,12 +125,16 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
   };
 
   const onFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (file === undefined || busy) {
+    const selected = event.target.files;
+    if (Predicate.isNull(selected) || selected.length === 0 || busy) {
+      event.target.value = "";
       return;
     }
-    addAttachment(file);
+    const files = Array.from(selected);
+    event.target.value = "";
+    for (const file of files) {
+      addAttachment(file);
+    }
     setPopoverOpen(false);
     setAttachView("menu");
   };
@@ -181,6 +185,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           onChange={onFileChange}
         />

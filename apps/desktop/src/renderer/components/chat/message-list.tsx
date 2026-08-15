@@ -1,5 +1,5 @@
 import { ChatMessage } from "@cafebot/sdk";
-import { Equal } from "effect";
+import { Predicate } from "effect";
 import { CoffeeIcon } from "lucide-react";
 import {
   Attachment,
@@ -43,13 +43,12 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
         <MessageScrollerViewport>
           <MessageScrollerContent className="px-6 py-6">
             {messages.map((message, index) => {
-              const isUser = Equal.equals("user")(message.role);
-              const attachments = message.attachments ?? [];
+              const isUser = message.role === "user";
+              const attachments = Predicate.isUndefined(message.attachments)
+                ? []
+                : message.attachments;
               return (
-                <MessageScrollerItem
-                  key={message.id}
-                  scrollAnchor={Equal.equals(index)(messages.length - 1)}
-                >
+                <MessageScrollerItem key={message.id} scrollAnchor={index === messages.length - 1}>
                   <MessageGroup>
                     <Message
                       align={isUser ? "end" : "start"}
@@ -82,7 +81,7 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
                           {message.content.length > 0 && (
                             <Bubble variant={isUser ? "default" : "ghost"}>
                               <BubbleContent>
-                                {Equal.equals(message.id)(welcomeMessage.id)
+                                {message.id === welcomeMessage.id
                                   ? m.chatWelcome()
                                   : message.content}
                               </BubbleContent>

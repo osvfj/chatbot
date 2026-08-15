@@ -1,4 +1,4 @@
-import { Deferred, Effect, Layer } from "effect";
+import { Deferred, Effect, Layer, Predicate } from "effect";
 import { RpcClient } from "effect/unstable/rpc";
 import type { IpcClientPort } from "../shared/rpc-client";
 import { layerIpcClient } from "../shared/rpc-client";
@@ -6,7 +6,7 @@ import { layerIpcClient } from "../shared/rpc-client";
 const deferred = Effect.runSync(Deferred.make<MessagePort, never>());
 
 window.addEventListener("message", (event) => {
-  if (event.data === "rpc-port" && event.ports[0] !== undefined) {
+  if (event.data === "rpc-port" && Predicate.isNotUndefined(event.ports[0])) {
     Effect.runFork(Deferred.succeed(deferred, event.ports[0]));
   }
 });

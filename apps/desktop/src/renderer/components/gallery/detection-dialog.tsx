@@ -32,8 +32,8 @@ export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogPr
         }
       }}
     >
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-lg flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{detection.disease.name}</DialogTitle>
           <DialogDescription>
             {m.galleryDialogDescription({
@@ -43,12 +43,12 @@ export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogPr
             })}
           </DialogDescription>
         </DialogHeader>
-        <img
-          src={card.imageUrl}
-          alt={detection.fileName}
-          className="w-full rounded-xl border border-border object-cover"
-        />
-        <div className="space-y-4 text-sm">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-slim text-sm">
+          <img
+            src={card.imageUrl}
+            alt={detection.fileName}
+            className="w-full rounded-xl border border-border object-cover"
+          />
           <div>
             <p className="mb-1 font-medium">{m.galleryDescription()}</p>
             <p className="text-muted-foreground">{detection.disease.description}</p>
@@ -70,7 +70,7 @@ export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogPr
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button onClick={onGoToChat}>
             <MessageCircleIcon className="size-4" />
             {m.galleryGoToChat()}

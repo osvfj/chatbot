@@ -28,6 +28,7 @@
   "galleryEmptyDescription": "Upload a photo of a leaf from the chat and it will appear here with its diagnosis and confidence level.",
   "galleryRemove": "Remove photo",
   "galleryGoToChat": "Go to chat",
+  "albumPhotos": "{count} photos",
   "galleryViewDetail": "View details of {disease}",
   "galleryDialogDescription": "{fileName} · {confidence}% confidence · {severity}",
   "galleryDescription": "Description",

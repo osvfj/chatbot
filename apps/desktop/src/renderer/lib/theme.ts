@@ -1,4 +1,4 @@
-import { Equal, Predicate } from "effect";
+import { Predicate } from "effect";
 
 const THEME_STORAGE_KEY = "cafebot.theme";
 
@@ -11,7 +11,7 @@ export function getStoredTheme(): boolean | null {
   if (Predicate.isNull(stored)) {
     return null;
   }
-  return Equal.equals("dark")(stored);
+  return stored === "dark";
 }
 
 export function storeTheme(dark: boolean): void {

@@ -36,7 +36,7 @@ export function CameraCapture({ onCapture, onBack }: CameraCaptureProps) {
         }
         stream = mediaStream;
         const video = videoRef.current;
-        if (video !== null) {
+        if (Predicate.isNotNull(video)) {
           video.srcObject = mediaStream;
           void video.play().catch(() => {
             if (active) {
@@ -64,7 +64,7 @@ export function CameraCapture({ onCapture, onBack }: CameraCaptureProps) {
 
   const handleCapture = (): void => {
     const video = videoRef.current;
-    if (video === null || video.videoWidth === 0) {
+    if (Predicate.isNull(video) || video.videoWidth === 0) {
       return;
     }
     setCapturing(true);

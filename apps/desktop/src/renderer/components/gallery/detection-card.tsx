@@ -1,7 +1,6 @@
 import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
 import { formatPercent, severityLabel } from "../../lib/format";
 import { useMessages } from "../../lib/use-language";
-import { Equal } from "effect";
 import { Badge } from "@cafebot/ui/components/badge";
 import { Button } from "@cafebot/ui/components/button";
 import { Trash2Icon } from "lucide-react";
@@ -16,11 +15,12 @@ export function DetectionCard({ card, onOpen, onRemove }: DetectionCardProps) {
   const m = useMessages();
   const { detection } = card;
   const severity = detection.disease.severity;
-  const badgeVariant = Equal.equals("high")(severity)
-    ? ("destructive" as const)
-    : Equal.equals("medium")(severity)
-      ? ("default" as const)
-      : ("secondary" as const);
+  const badgeVariant =
+    severity === "high"
+      ? ("destructive" as const)
+      : severity === "medium"
+        ? ("default" as const)
+        : ("secondary" as const);
 
   return (
     <div className="group relative mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-sm">

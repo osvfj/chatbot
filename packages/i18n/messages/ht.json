@@ -28,6 +28,7 @@
   "galleryEmptyDescription": "Voye yon foto yon fèy depi nan chat la epi l ap parèt isit la ak dyagnostik li ak nivo konfyans li.",
   "galleryRemove": "Efase foto",
   "galleryGoToChat": "Ale nan chat",
+  "albumPhotos": "{count} foto",
   "galleryViewDetail": "Gade detay {disease}",
   "galleryDialogDescription": "{fileName} · {confidence}% konfyans · {severity}",
   "galleryDescription": "Deskripsyon",

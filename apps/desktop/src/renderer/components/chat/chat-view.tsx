@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/
 import { useChat } from "../../lib/use-chat";
 import { useGallery } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
-import { conversationUuidAtom } from "../../lib/atoms";
+import { conversationMetaAtom, conversationUuidAtom } from "../../lib/atoms";
 import { useAtom } from "@effect/atom-react";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
@@ -20,16 +20,24 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const m = useMessages();
   const navigate = useNavigate();
   const [, setConversationUuid] = useAtom(conversationUuidAtom);
+  const [, setConversationMeta] = useAtom(conversationMetaAtom);
   const { messages, isWaiting, appendUserMessage, sendReply, resetChat } = useChat();
   const { isAnalyzing, analyzeFile } = useGallery();
   const busy = isWaiting || isAnalyzing;
 
-  const ensureConversation = (): void => {
-    if (conversationId === undefined) {
+  const ensureConversation = (title: string): string => {
+    if (Predicate.isUndefined(conversationId)) {
       const uuid = crypto.randomUUID();
       setConversationUuid(uuid);
+      setConversationMeta((current) => {
+        const next = new Map(current);
+        next.set(uuid, { title, createdAt: Date.now() });
+        return next;
+      });
       navigate({ to: "/chat/$uuid", params: { uuid } });
+      return uuid;
     }
+    return conversationId;
   };
 
   const handleNewConversation = (): void => {
@@ -57,7 +65,10 @@ export function ChatView({ conversationId }: ChatViewProps) {
     if (trimmed.length === 0 && attachments.length === 0) {
       return;
     }
-    ensureConversation();
+    const first = attachments[0];
+    const uuid = ensureConversation(
+      trimmed.length > 0 ? trimmed : Predicate.isNotUndefined(first) ? first.name : "📷",
+    );
     const attachmentData = await Promise.all(
       attachments.map(async (file) => ({
         name: file.name,
@@ -68,7 +79,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
     appendUserMessage(trimmed, attachmentData);
     if (attachments.length > 0) {
       for (const file of attachments) {
-        await analyzeFile(file);
+        await analyzeFile(file, uuid);
       }
     } else {
       await sendReply(trimmed);
