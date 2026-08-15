@@ -2,7 +2,14 @@ import { useLayoutEffect } from "react";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Equal } from "effect";
 import type { LucideIcon } from "lucide-react";
-import { CoffeeIcon, ImagesIcon, MessageCircleIcon, MoonIcon, SunIcon } from "lucide-react";
+import {
+  CoffeeIcon,
+  ImagesIcon,
+  LanguagesIcon,
+  MessageCircleIcon,
+  MoonIcon,
+  SunIcon,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,26 +25,29 @@ import {
 } from "@cafebot/ui/components/sidebar";
 import { activeSectionAtom, darkModeAtom, detectionsAtom, type SectionId } from "../../lib/atoms";
 import { applyTheme, storeTheme } from "../../lib/theme";
+import { cycleLanguage, useLanguage, useMessages } from "../../lib/use-language";
 
 interface NavItem {
   readonly id: SectionId;
-  readonly label: string;
+  readonly label: () => string;
   readonly icon: LucideIcon;
 }
 
-const navItems: ReadonlyArray<NavItem> = [
-  { id: "chat", label: "Chat", icon: MessageCircleIcon },
-  { id: "gallery", label: "Galería", icon: ImagesIcon },
-];
-
 export function AppSidebar() {
+  const m = useMessages();
   const [section, setSection] = useAtom(activeSectionAtom);
   const detections = useAtomValue(detectionsAtom);
   const [dark, setDark] = useAtom(darkModeAtom);
+  const [language, setLanguage] = useLanguage();
 
   useLayoutEffect(() => {
     applyTheme(dark);
   }, [dark]);
+
+  const navItems: ReadonlyArray<NavItem> = [
+    { id: "chat", label: () => m.navChat(), icon: MessageCircleIcon },
+    { id: "gallery", label: () => m.navGallery(), icon: ImagesIcon },
+  ];
 
   return (
     <Sidebar collapsible="icon">
@@ -47,8 +57,8 @@ export function AppSidebar() {
             <CoffeeIcon className="size-4" />
           </div>
           <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-            <p className="truncate text-sm font-bold tracking-tight">Cafebot</p>
-            <p className="truncate text-xs text-muted-foreground">salud del cafeto</p>
+            <p className="truncate text-sm font-bold tracking-tight">{m.appName()}</p>
+            <p className="truncate text-xs text-muted-foreground">{m.appSubtitle()}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -59,13 +69,13 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    tooltip={item.label}
+                    tooltip={item.label()}
                     size="lg"
                     isActive={Equal.equals(item.id)(section)}
                     onClick={() => setSection(item.id)}
                   >
                     <item.icon />
-                    <span>{item.label}</span>
+                    <span>{item.label()}</span>
                     {Equal.equals("gallery")(item.id) && detections.length > 0 && (
                       <SidebarMenuBadge>{detections.length}</SidebarMenuBadge>
                     )}
@@ -77,10 +87,20 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
+        <SidebarMenu className="gap-1.5">
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip={dark ? "Modo claro" : "Modo oscuro"}
+              tooltip={language.toUpperCase()}
+              size="lg"
+              onClick={() => setLanguage(cycleLanguage(language))}
+            >
+              <LanguagesIcon />
+              <span className="uppercase">{language}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={dark ? m.themeLight() : m.themeDark()}
               size="lg"
               onClick={() => {
                 const next = !dark;
@@ -89,7 +109,7 @@ export function AppSidebar() {
               }}
             >
               {dark ? <SunIcon /> : <MoonIcon />}
-              <span>{dark ? "Modo claro" : "Modo oscuro"}</span>
+              <span>{dark ? m.themeLight() : m.themeDark()}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

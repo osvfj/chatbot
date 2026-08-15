@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAtom } from "@effect/atom-react";
 import { Cause, DateTime, Effect, Exit } from "effect";
+import * as m from "@cafebot/i18n";
 import { ChatMessage, MessageAttachment } from "@cafebot/sdk";
 import { toast } from "sonner";
 import { messagesAtom, sendMessageFn, suggestionsAtom, welcomeMessage } from "./atoms";
@@ -8,7 +9,7 @@ import { messagesAtom, sendMessageFn, suggestionsAtom, welcomeMessage } from "./
 const errorMessage = new ChatMessage({
   id: "00000000-0000-4000-8000-000000000002",
   role: "assistant",
-  content: "Lo siento, hubo un problema al generar la respuesta. Inténtalo de nuevo en un momento.",
+  content: m.chatErrorReply(),
   sentAt: Effect.runSync(DateTime.now),
 });
 
@@ -52,7 +53,7 @@ export function useChat() {
         setSuggestions(exit.value.suggestions);
       } else {
         setMessages((current) => [...current, errorMessage]);
-        toast.error("No se pudo enviar el mensaje", {
+        toast.error(m.errorSend(), {
           description: String(Cause.squash(exit.cause)),
         });
       }

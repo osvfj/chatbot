@@ -5,14 +5,18 @@
   "description": "Cafebot Desktop App",
   "main": "./out/main/index.js",
   "scripts": {
+    "predev": "pnpm --filter @cafebot/i18n compile",
     "dev": "electron-vite dev",
+    "prebuild": "pnpm --filter @cafebot/i18n compile",
     "build": "electron-vite build",
     "start": "electron-vite preview",
+    "pretype-check": "pnpm --filter @cafebot/i18n compile",
     "type-check": "tsgo -p tsconfig.json",
     "package": "electron-vite build && electron-builder --config electron-builder.config.ts",
     "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\""
   },
   "dependencies": {
+    "@cafebot/i18n": "workspace:*",
     "@cafebot/sdk": "workspace:*",
     "@cafebot/ui": "workspace:*",
     "@effect/atom-react": "4.0.0-beta.106",

@@ -1,4 +1,5 @@
 import { DateTime } from "effect";
+import * as m from "@cafebot/i18n";
 import type { DiseaseInfo } from "@cafebot/sdk";
 
 export const formatBytes = (bytes: number): string => {
@@ -14,7 +15,7 @@ export const formatBytes = (bytes: number): string => {
 export const formatPercent = (value: number): string => `${Math.round(value * 100)}%`;
 
 export const formatTime = (utc: DateTime.Utc): string =>
-  new Intl.DateTimeFormat("es", {
+  new Intl.DateTimeFormat(m.getLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   }).format(DateTime.toDate(utc));
@@ -22,12 +23,12 @@ export const formatTime = (utc: DateTime.Utc): string =>
 export const severityLabel = (severity: DiseaseInfo["severity"]): string => {
   switch (severity) {
     case "none":
-      return "Sin riesgo";
+      return m.severityNone();
     case "low":
-      return "Severidad baja";
+      return m.severityLow();
     case "medium":
-      return "Severidad media";
+      return m.severityMedium();
     case "high":
-      return "Severidad alta";
+      return m.severityHigh();
   }
 };

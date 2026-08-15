@@ -1,5 +1,6 @@
 import { DateTime, Effect } from "effect";
 import { Atom } from "effect/unstable/reactivity";
+import * as m from "@cafebot/i18n";
 import { ChatMessage, DetectionResult } from "@cafebot/sdk";
 import { Api } from "../services/api";
 import { getStoredTheme, prefersDarkColorScheme } from "./theme";
@@ -15,8 +16,7 @@ export interface DetectionCard {
 export const welcomeMessage = new ChatMessage({
   id: "00000000-0000-4000-8000-000000000000",
   role: "assistant",
-  content:
-    "¡Hola! Soy Cafebot, tu asistente para la detección de enfermedades del cafeto. Sube una foto de una hoja y la analizaré, o pregúntame sobre roya, cercospora, ojo de gallo, broca o minador.",
+  content: m.chatWelcome(),
   sentAt: Effect.runSync(DateTime.now),
 });
 

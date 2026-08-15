@@ -10,11 +10,13 @@ import {
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Spinner } from "@cafebot/ui/components/spinner";
 import { useGallery } from "../../lib/use-gallery";
+import { useMessages } from "../../lib/use-language";
 import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
 import { DetectionCard } from "./detection-card";
 import { DetectionDialog } from "./detection-dialog";
 
 export function GalleryView() {
+  const m = useMessages();
   const { detections, isAnalyzing, removeDetection } = useGallery();
   const [selected, setSelected] = useState<DetectionCardModel | null>(null);
 
@@ -22,16 +24,18 @@ export function GalleryView() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
-          <SidebarTrigger aria-label="Colapsar barra lateral" />
+          <SidebarTrigger aria-label={m.sidebarCollapse()} />
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">Galería</h1>
-            <p className="text-sm text-muted-foreground">Fotos analizadas · {detections.length}</p>
+            <h1 className="text-lg font-semibold tracking-tight">{m.galleryHeader()}</h1>
+            <p className="text-sm text-muted-foreground">
+              {m.gallerySubtitle({ count: detections.length })}
+            </p>
           </div>
         </div>
         {isAnalyzing && (
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner className="size-4" />
-            Analizando…
+            {m.galleryAnalyzing()}
           </span>
         )}
       </header>
@@ -42,11 +46,8 @@ export function GalleryView() {
               <EmptyMedia variant="icon">
                 <ImageOffIcon className="size-4" />
               </EmptyMedia>
-              <EmptyTitle>Sin análisis todavía</EmptyTitle>
-              <EmptyDescription>
-                Sube una foto de una hoja desde el chat y aparecerá aquí con su diagnóstico y nivel
-                de confianza.
-              </EmptyDescription>
+              <EmptyTitle>{m.galleryEmptyTitle()}</EmptyTitle>
+              <EmptyDescription>{m.galleryEmptyDescription()}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

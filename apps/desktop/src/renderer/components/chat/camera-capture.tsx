@@ -3,6 +3,7 @@ import { Predicate } from "effect";
 import { CameraIcon, ChevronLeftIcon } from "lucide-react";
 import { Button } from "@cafebot/ui/components/button";
 import { Spinner } from "@cafebot/ui/components/spinner";
+import { useMessages } from "../../lib/use-language";
 
 interface CameraCaptureProps {
   readonly onCapture: (file: File) => void;
@@ -10,6 +11,7 @@ interface CameraCaptureProps {
 }
 
 export function CameraCapture({ onCapture, onBack }: CameraCaptureProps) {
+  const m = useMessages();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [starting, setStarting] = useState(true);
   const [error, setError] = useState(false);
@@ -101,14 +103,14 @@ export function CameraCapture({ onCapture, onBack }: CameraCaptureProps) {
         <video ref={videoRef} playsInline muted className="size-full object-cover" />
         {error && (
           <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
-            <p className="text-sm text-destructive">No se pudo acceder a la cámara</p>
+            <p className="text-sm text-destructive">{m.chatCameraError()}</p>
           </div>
         )}
       </div>
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={onBack} className="flex-1">
           <ChevronLeftIcon />
-          Volver
+          {m.chatBack()}
         </Button>
         <Button
           size="sm"
@@ -117,7 +119,7 @@ export function CameraCapture({ onCapture, onBack }: CameraCaptureProps) {
           className="flex-1"
         >
           {capturing ? <Spinner /> : <CameraIcon />}
-          Capturar
+          {m.chatCapture()}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useAtom } from "@effect/atom-react";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { Cause, DateTime, Effect, Exit } from "effect";
+import * as m from "@cafebot/i18n";
 import { ChatMessage } from "@cafebot/sdk";
 import { toast } from "sonner";
 import { analyzeImageFn, detectionsAtom, messagesAtom } from "./atoms";
@@ -27,14 +28,16 @@ export function useGallery() {
         new ChatMessage({
           id: crypto.randomUUID(),
           role: "assistant",
-          content:
-            `Analicé la imagen "${detection.fileName}": se detectó ${detection.disease.name} ` +
-            `con un ${confidence}% de confianza. Encontrarás esta foto en la galería con el detalle completo.`,
+          content: m.chatAnalysisResult({
+            fileName: detection.fileName,
+            diseaseName: detection.disease.name,
+            confidence,
+          }),
           sentAt: Effect.runSync(DateTime.now),
         }),
       ]);
     } else {
-      toast.error("No se pudo analizar la imagen", {
+      toast.error(m.errorAnalysis(), {
         description: String(Cause.squash(exit.cause)),
       });
     }

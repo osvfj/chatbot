@@ -5,10 +5,12 @@ import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
 import { useChat } from "../../lib/use-chat";
 import { useGallery } from "../../lib/use-gallery";
+import { useMessages } from "../../lib/use-language";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
 
 export function ChatView() {
+  const m = useMessages();
   const { messages, isWaiting, appendUserMessage, sendReply, resetChat } = useChat();
   const { isAnalyzing, analyzeFile } = useGallery();
   const busy = isWaiting || isAnalyzing;
@@ -53,12 +55,10 @@ export function ChatView() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
-          <SidebarTrigger aria-label="Colapsar barra lateral" />
+          <SidebarTrigger aria-label={m.sidebarCollapse()} />
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">Chat</h1>
-            <p className="text-sm text-muted-foreground">
-              Asistente para la detección de enfermedades del cafeto
-            </p>
+            <h1 className="text-lg font-semibold tracking-tight">{m.chatHeader()}</h1>
+            <p className="text-sm text-muted-foreground">{m.chatSubtitle()}</p>
           </div>
         </div>
         <Tooltip>
@@ -69,13 +69,13 @@ export function ChatView() {
                 size="icon"
                 disabled={busy}
                 onClick={resetChat}
-                aria-label="Nueva conversación"
+                aria-label={m.tooltipNewConversation()}
               >
                 <MessageSquarePlusIcon className="size-4" />
               </Button>
             }
           />
-          <TooltipContent>Nueva conversación</TooltipContent>
+          <TooltipContent>{m.tooltipNewConversation()}</TooltipContent>
         </Tooltip>
       </header>
       <MessageList messages={messages} isWaiting={busy} />

@@ -25,7 +25,9 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@cafebot/ui/components/message-scroller";
+import { welcomeMessage } from "../../lib/atoms";
 import { formatBytes, formatTime } from "../../lib/format";
+import { useMessages } from "../../lib/use-language";
 import { TypingIndicator } from "./typing-indicator";
 
 interface MessageListProps {
@@ -34,6 +36,7 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, isWaiting }: MessageListProps) {
+  const m = useMessages();
   return (
     <MessageScrollerProvider>
       <MessageScroller>
@@ -78,7 +81,11 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
                           )}
                           {message.content.length > 0 && (
                             <Bubble variant={isUser ? "default" : "ghost"}>
-                              <BubbleContent>{message.content}</BubbleContent>
+                              <BubbleContent>
+                                {Equal.equals(message.id)(welcomeMessage.id)
+                                  ? m.chatWelcome()
+                                  : message.content}
+                              </BubbleContent>
                             </Bubble>
                           )}
                         </BubbleGroup>

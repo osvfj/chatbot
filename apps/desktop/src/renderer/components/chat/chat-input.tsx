@@ -18,6 +18,7 @@ import { Spinner } from "@cafebot/ui/components/spinner";
 import { Textarea } from "@cafebot/ui/components/textarea";
 import { suggestionsAtom } from "../../lib/atoms";
 import { formatBytes } from "../../lib/format";
+import { useMessages } from "../../lib/use-language";
 import { CameraCapture } from "./camera-capture";
 
 interface PendingAttachment {
@@ -33,6 +34,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
+  const m = useMessages();
   const [value, setValue] = useState("");
   const [attachView, setAttachView] = useState<"menu" | "camera">("menu");
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -149,7 +151,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
               <AttachmentActions>
                 <AttachmentAction
                   onClick={() => removeAttachment(attachment.id)}
-                  aria-label="Quitar adjunto"
+                  aria-label={m.chatRemoveAttachment()}
                 >
                   <XIcon className="size-3.5" />
                 </AttachmentAction>
@@ -186,7 +188,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Describe un síntoma o pregunta sobre el café…"
+          placeholder={m.chatPlaceholder()}
           className="max-h-64 min-h-24 w-full resize-none border-0 bg-transparent pt-4 pr-14 pb-16 pl-8 text-base shadow-none scrollbar-slim focus-visible:ring-0"
           rows={2}
         />
@@ -198,7 +200,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
                 size="icon"
                 disabled={busy}
                 className="absolute bottom-3 left-3 size-10 rounded-full"
-                aria-label="Adjuntar imagen"
+                aria-label={m.chatAttachFile()}
               />
             }
           >
@@ -214,7 +216,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
                   className="justify-start gap-2 rounded-lg px-2"
                 >
                   <FileImageIcon className="size-4" />
-                  Seleccionar archivo
+                  {m.chatAttachFile()}
                 </Button>
                 <Button
                   variant="ghost"
@@ -223,7 +225,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
                   className="justify-start gap-2 rounded-lg px-2"
                 >
                   <CameraIcon className="size-4" />
-                  Tomar foto
+                  {m.chatTakePhoto()}
                 </Button>
               </div>
             ) : (
@@ -235,7 +237,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
           size="icon"
           disabled={busy || (value.trim().length === 0 && pending.length === 0)}
           onClick={() => submit(value)}
-          aria-label="Enviar mensaje"
+          aria-label={m.chatSend()}
           className="absolute right-3 bottom-3 size-10 rounded-full"
         >
           <SendIcon className="size-5 -translate-x-px translate-y-px" />
