@@ -1,7 +1,7 @@
+import { useState } from "react";
 import { useAtom } from "@effect/atom-react";
-import { AsyncResult } from "effect/unstable/reactivity";
 import { Cause, DateTime, Effect, Exit } from "effect";
-import { ChatMessage } from "@cafebot/sdk";
+import { ChatMessage, MessageAttachment } from "@cafebot/sdk";
 import { toast } from "sonner";
 import { messagesAtom, sendMessageFn, suggestionsAtom, welcomeMessage } from "./atoms";
 
@@ -14,35 +14,60 @@ const errorMessage = new ChatMessage({
 
 export function useChat() {
   const [messages, setMessages] = useAtom(messagesAtom);
-  const [sendResult, send] = useAtom(sendMessageFn, { mode: "promiseExit" });
+  const [, send] = useAtom(sendMessageFn, { mode: "promiseExit" });
   const [, setSuggestions] = useAtom(suggestionsAtom);
+  const [sending, setSending] = useState(false);
+
+  const appendUserMessage = (
+    content: string,
+    attachments: ReadonlyArray<{
+      readonly name: string;
+      readonly dataUrl: string;
+      readonly sizeBytes: number;
+    }> = [],
+  ): void => {
+    setMessages((current) => [
+      ...current,
+      new ChatMessage({
+        id: crypto.randomUUID(),
+        role: "user",
+        content,
+        sentAt: Effect.runSync(DateTime.now),
+        attachments: attachments.map((attachment) => new MessageAttachment(attachment)),
+      }),
+    ]);
+  };
+
+  const sendReply = async (content: string): Promise<void> => {
+    const trimmed = content.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+    setSuggestions([]);
+    setSending(true);
+    try {
+      const exit = await send({ payload: { content: trimmed } });
+      if (Exit.isSuccess(exit)) {
+        setMessages((current) => [...current, exit.value.message]);
+        setSuggestions(exit.value.suggestions);
+      } else {
+        setMessages((current) => [...current, errorMessage]);
+        toast.error("No se pudo enviar el mensaje", {
+          description: String(Cause.squash(exit.cause)),
+        });
+      }
+    } finally {
+      setSending(false);
+    }
+  };
 
   const sendMessage = async (content: string): Promise<void> => {
     const trimmed = content.trim();
     if (trimmed.length === 0) {
       return;
     }
-    setSuggestions([]);
-    setMessages((current) => [
-      ...current,
-      new ChatMessage({
-        id: crypto.randomUUID(),
-        role: "user",
-        content: trimmed,
-        sentAt: Effect.runSync(DateTime.now),
-      }),
-    ]);
-
-    const exit = await send({ payload: { content: trimmed } });
-    if (Exit.isSuccess(exit)) {
-      setMessages((current) => [...current, exit.value.message]);
-      setSuggestions(exit.value.suggestions);
-    } else {
-      setMessages((current) => [...current, errorMessage]);
-      toast.error("No se pudo enviar el mensaje", {
-        description: String(Cause.squash(exit.cause)),
-      });
-    }
+    appendUserMessage(trimmed);
+    await sendReply(trimmed);
   };
 
   const resetChat = (): void => {
@@ -52,8 +77,10 @@ export function useChat() {
 
   return {
     messages,
-    isWaiting: AsyncResult.isWaiting(sendResult),
+    isWaiting: sending,
     sendMessage,
+    appendUserMessage,
+    sendReply,
     resetChat,
   };
 }

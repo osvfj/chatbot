@@ -33,9 +33,6 @@ export function useGallery() {
           sentAt: Effect.runSync(DateTime.now),
         }),
       ]);
-      toast.success("Análisis completado", {
-        description: `${detection.disease.name} · ${confidence}% de confianza`,
-      });
     } else {
       toast.error("No se pudo analizar la imagen", {
         description: String(Cause.squash(exit.cause)),

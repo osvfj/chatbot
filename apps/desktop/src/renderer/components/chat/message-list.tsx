@@ -1,5 +1,14 @@
 import { ChatMessage } from "@cafebot/sdk";
+import { Equal } from "effect";
 import { CoffeeIcon } from "lucide-react";
+import {
+  Attachment,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@cafebot/ui/components/attachment";
 import {
   Message,
   MessageAvatar,
@@ -16,7 +25,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@cafebot/ui/components/message-scroller";
-import { formatTime } from "../../lib/format";
+import { formatBytes, formatTime } from "../../lib/format";
 import { TypingIndicator } from "./typing-indicator";
 
 interface MessageListProps {
@@ -29,28 +38,57 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
     <MessageScrollerProvider>
       <MessageScroller>
         <MessageScrollerViewport>
-          <MessageScrollerContent>
-            {messages.map((message, index) => (
-              <MessageScrollerItem key={message.id} scrollAnchor={index === messages.length - 1}>
-                <MessageGroup>
-                  <Message align={message.role === "user" ? "end" : "start"}>
-                    {message.role === "assistant" && (
-                      <MessageAvatar className="size-8 bg-primary text-primary-foreground">
-                        <CoffeeIcon className="size-4" />
-                      </MessageAvatar>
-                    )}
-                    <MessageContent>
-                      <BubbleGroup>
-                        <Bubble variant={message.role === "user" ? "default" : "tinted"}>
-                          <BubbleContent>{message.content}</BubbleContent>
-                        </Bubble>
-                      </BubbleGroup>
-                      <MessageFooter>{formatTime(message.sentAt)}</MessageFooter>
-                    </MessageContent>
-                  </Message>
-                </MessageGroup>
-              </MessageScrollerItem>
-            ))}
+          <MessageScrollerContent className="px-6 py-6">
+            {messages.map((message, index) => {
+              const isUser = Equal.equals("user")(message.role);
+              const attachments = message.attachments ?? [];
+              return (
+                <MessageScrollerItem
+                  key={message.id}
+                  scrollAnchor={Equal.equals(index)(messages.length - 1)}
+                >
+                  <MessageGroup>
+                    <Message
+                      align={isUser ? "end" : "start"}
+                      data-variant={isUser ? undefined : "ghost"}
+                    >
+                      {!isUser && (
+                        <MessageAvatar className="size-8 bg-primary text-primary-foreground">
+                          <CoffeeIcon className="size-4" />
+                        </MessageAvatar>
+                      )}
+                      <MessageContent>
+                        <BubbleGroup>
+                          {attachments.length > 0 && (
+                            <AttachmentGroup className="justify-end">
+                              {attachments.map((attachment) => (
+                                <Attachment key={attachment.name} size="lg">
+                                  <AttachmentMedia variant="image">
+                                    <img src={attachment.dataUrl} alt={attachment.name} />
+                                  </AttachmentMedia>
+                                  <AttachmentContent>
+                                    <AttachmentTitle>{attachment.name}</AttachmentTitle>
+                                    <AttachmentDescription>
+                                      {formatBytes(attachment.sizeBytes)}
+                                    </AttachmentDescription>
+                                  </AttachmentContent>
+                                </Attachment>
+                              ))}
+                            </AttachmentGroup>
+                          )}
+                          {message.content.length > 0 && (
+                            <Bubble variant={isUser ? "default" : "ghost"}>
+                              <BubbleContent>{message.content}</BubbleContent>
+                            </Bubble>
+                          )}
+                        </BubbleGroup>
+                        <MessageFooter>{formatTime(message.sentAt)}</MessageFooter>
+                      </MessageContent>
+                    </Message>
+                  </MessageGroup>
+                </MessageScrollerItem>
+              );
+            })}
             {isWaiting && (
               <MessageScrollerItem>
                 <TypingIndicator />
