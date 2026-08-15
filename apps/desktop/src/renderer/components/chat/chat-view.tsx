@@ -1,4 +1,4 @@
-import { Trash2Icon } from "lucide-react";
+import { MessageSquarePlusIcon } from "lucide-react";
 import { Button } from "@cafebot/ui/components/button";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
@@ -33,7 +33,7 @@ export function ChatView() {
                 onClick={resetChat}
                 aria-label="Nueva conversación"
               >
-                <Trash2Icon className="size-4" />
+                <MessageSquarePlusIcon className="size-4" />
               </Button>
             }
           />

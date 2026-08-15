@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Effect, Equal, Layer, ManagedRuntime } from "effect";
 import { RpcServer } from "effect/unstable/rpc";
-import { app, BrowserWindow, MessageChannelMain, type MessagePortMain } from "electron";
+import { app, BrowserWindow, MessageChannelMain, session, type MessagePortMain } from "electron";
 import { AllRpcs } from "../shared/rpc";
 import { layerIpcServer, RpcPortHandoff, type IpcServerPort } from "./ipc-server";
 import { sendMessage } from "./services/chat";
@@ -85,7 +85,11 @@ const createWindow = (bind: (port: IpcServerPort) => void): void => {
 };
 
 app.whenReady().then(
-  () =>
+  () => {
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      callback(Equal.equals("media")(permission));
+    });
+
     runtime.runPromise(RpcPortHandoff).then((handoff) => {
       createWindow(handoff.bind);
       app.on("activate", () => {
@@ -93,7 +97,8 @@ app.whenReady().then(
           createWindow(handoff.bind);
         }
       });
-    }),
+    });
+  },
   (cause) => {
     console.error("No se pudo iniciar el servidor RPC de Cafebot", cause);
     app.quit();
