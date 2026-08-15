@@ -189,7 +189,7 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder={m.chatPlaceholder()}
-          className="max-h-64 min-h-24 w-full resize-none border-0 bg-transparent pt-4 pr-14 pb-16 pl-8 text-base shadow-none scrollbar-slim focus-visible:ring-0"
+          className="max-h-64 min-h-24 w-full resize-none rounded-none border-0 bg-transparent pt-4 pr-14 pb-16 pl-8 text-base shadow-none scrollbar-slim focus-visible:ring-0 dark:bg-transparent"
           rows={2}
         />
         <Popover open={popoverOpen} onOpenChange={handleOpenChange}>

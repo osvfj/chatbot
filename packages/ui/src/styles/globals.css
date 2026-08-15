@@ -9,12 +9,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @utility scrollbar-slim {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
-
   &::-webkit-scrollbar {
     width: 6px;
     height: 6px;
+    background: transparent;
   }
 
   &::-webkit-scrollbar-track {
@@ -22,8 +20,18 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+    background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
     border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   &[data-autoscrolling]::-webkit-scrollbar-thumb {
