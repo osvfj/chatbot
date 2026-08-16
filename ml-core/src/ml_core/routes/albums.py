@@ -1,12 +1,12 @@
-import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from ..db import connect
 from ..security import now_iso, require_user
+from ..vision import detector
 
 STORAGE_DIR = Path(__file__).resolve().parent.parent.parent / "storage"
 
@@ -44,11 +44,6 @@ def upload_photo(
     chat_id: str,
     file: UploadFile = File(...),
     auth=Depends(require_user),
-    disease_id: str = Form(""),
-    disease_name: str = Form(""),
-    confidence: float = Form(0.0),
-    severity: str = Form(""),
-    advice: str = Form(""),
 ):
     _get_chat(chat_id, auth["finca"])
     foto_id = str(uuid4())
@@ -56,8 +51,22 @@ def upload_photo(
     ext = Path(nombre_archivo).suffix or ".jpg"
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     path = STORAGE_DIR / (foto_id + ext)
+    bytes_data = file.file.read()
     with path.open("wb") as out:
-        shutil.copyfileobj(file.file, out)
+        out.write(bytes_data)
+
+    deteccion = detector.detect(bytes_data)
+    disease_id = ""
+    disease_name = ""
+    confidence = 0.0
+    severity = ""
+    advice = ""
+    if deteccion is not None:
+        disease_id = deteccion["disease_id"]
+        disease_name = deteccion["disease_name"]
+        confidence = deteccion["confidence"]
+        severity = deteccion["severity"] or ""
+        advice = deteccion["advice"] or ""
 
     conn = connect()
     album = conn.execute("SELECT id FROM album WHERE chat_id = ?", (chat_id,)).fetchone()
@@ -100,6 +109,7 @@ def upload_photo(
         "disease_name": disease_name,
         "confidence": confidence,
         "severity": severity,
+        "detector_disponible": detector.available(),
     }
 
 

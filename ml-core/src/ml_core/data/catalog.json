@@ -1,0 +1,50 @@
+{
+  "healthy": {
+    "name": "Hoja sana",
+    "description": "La hoja presenta un color verde uniforme, sin manchas, pústulas ni perforaciones visibles.",
+    "advice": "Continúa con las prácticas de manejo integrado: revisa el cafetal cada 15 días y mantén una nutrición balanceada.",
+    "severity": "none"
+  },
+  "leaf-rust": {
+    "name": "Roya del cafeto",
+    "description": "Pústulas amarillo-anaranjadas en el envés de la hoja que liberan esporas y provocan defoliación.",
+    "advice": "Podas fitosanitarias, control químico con fungicidas a base de cobre o triazoles en época de lluvias, y uso de variedades resistentes como Catimor o Castillo.",
+    "severity": "high"
+  },
+  "cercospora": {
+    "name": "Cercospora (mancha de hierro)",
+    "description": "Manchas circulares de color café con centro grisáceo y borde amarillento, típicas de la hoja.",
+    "advice": "Regula la sombra, evita el estrés hídrico y aplica fungicidas protectantes. Mejora la nutrición con potasio y boro.",
+    "severity": "medium"
+  },
+  "ojo-de-gallo": {
+    "name": "Ojo de gallo (Mycena citricolor)",
+    "description": "Lesiones circulares grises que se asemejan a un ojo, causadas por hongos de zonas de mucha sombra y humedad.",
+    "advice": "Regula la sombra del cafetal, mejora la ventilación y aplica fungicidas de contacto en focos iniciales.",
+    "severity": "medium"
+  },
+  "leaf-miner": {
+    "name": "Minador de la hoja",
+    "description": "Galerías serpentinas y traslúcidas dentro del tejido foliar, causadas por larvas de insectos.",
+    "advice": "Controla el estrés de la planta, favorece enemigos naturales y usa insecticidas específicos solo cuando el daño supera el umbral económico.",
+    "severity": "low"
+  },
+  "berry-borer": {
+    "name": "Broca del café",
+    "description": "Perforaciones visibles en los frutos, granos perforados con daño interno y caída prematura de cerezas.",
+    "advice": "Realiza la recolección completa y oportuna, maneja los frutos caídos y aplica control biológico con Beauveria bassiana en fases tempranas.",
+    "severity": "high"
+  },
+  "phoma": {
+    "name": "Phoma",
+    "description": "Manchas de color café oscuro a negro, de bordes irregulares, provocadas por Phoma costarricensis en hojas y ramas.",
+    "advice": "Realiza podas fitosanitarias para eliminar tejido infectado, mejora la circulación de aire y evita el exceso de humedad.",
+    "severity": "medium"
+  },
+  "red-spider-mite": {
+    "name": "Arañita roja",
+    "description": "Amarillamiento y punteado fino en la hoja por alimentación de ácaros, junto con una telaraña característica en el envés.",
+    "advice": "Evita el estrés hídrico y el exceso de polvo en el follaje; aplica acaricidas específicos solo cuando supere el umbral económico.",
+    "severity": "low"
+  }
+}
