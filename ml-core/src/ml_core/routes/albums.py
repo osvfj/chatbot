@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -43,7 +44,7 @@ def list_albums(auth=Depends(require_user)):
 def album_photos(album_id: str, auth=Depends(require_user)):
     conn = connect()
     rows = conn.execute(
-        "SELECT id, chat_id, nombre_archivo, disease_id, disease_name, description, confidence, severity, advice, creado_en "
+        "SELECT id, chat_id, nombre_archivo, disease_id, disease_name, description, confidence, severity, advice, detector_status, top_predictions, creado_en "
         "FROM foto WHERE album_id = ? AND finca_id = ? ORDER BY creado_en ASC",
         (album_id, auth["finca"]),
     ).fetchall()
@@ -74,13 +75,17 @@ def upload_photo(
     confidence = 0.0
     severity = ""
     advice = ""
+    detector_status = "unavailable"
+    top_predictions = "[]"
     if deteccion is not None:
+        detector_status = deteccion["detector_status"]
         disease_id = deteccion["disease_id"]
         disease_name = deteccion["disease_name"]
         description = deteccion["description"] or ""
         confidence = deteccion["confidence"]
         severity = deteccion["severity"] or ""
         advice = deteccion["advice"] or ""
+        top_predictions = json.dumps(deteccion["top_predictions"], ensure_ascii=False)
 
     conn = connect()
     album = conn.execute("SELECT id FROM album WHERE chat_id = ?", (chat_id,)).fetchone()
@@ -94,8 +99,8 @@ def upload_photo(
     else:
         album_id = album["id"]
     conn.execute(
-        "INSERT INTO foto (id, album_id, chat_id, finca_id, archivo, nombre_archivo, mime, disease_id, disease_name, description, confidence, severity, advice, creado_en) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO foto (id, album_id, chat_id, finca_id, archivo, nombre_archivo, mime, disease_id, disease_name, description, confidence, severity, advice, detector_status, top_predictions, creado_en) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             foto_id,
             album_id,
@@ -110,6 +115,8 @@ def upload_photo(
             confidence,
             severity,
             advice,
+            detector_status,
+            top_predictions,
             now_iso(),
         ),
     )
@@ -125,6 +132,8 @@ def upload_photo(
         "description": description,
         "confidence": confidence,
         "severity": severity,
+        "detector_status": detector_status,
+        "top_predictions": json.loads(top_predictions),
         "detector_disponible": detector.available(),
     }
 

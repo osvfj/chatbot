@@ -59,5 +59,7 @@ CREATE TABLE IF NOT EXISTS foto (
   confidence REAL,
   severity TEXT,
   advice TEXT,
+  detector_status TEXT NOT NULL DEFAULT 'unavailable',
+  top_predictions TEXT,
   creado_en TEXT NOT NULL
 );

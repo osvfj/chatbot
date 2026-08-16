@@ -19,7 +19,7 @@
   "chatCameraError": "No se pudo acceder a la cámara",
   "chatCapture": "Capturar",
   "chatBack": "Volver",
-  "chatWelcome": "¡Hola! Soy Cafebot, tu asistente para la detección de enfermedades del cafeto. Sube una foto de una hoja y la analizaré, o pregúntame sobre roya, cercospora, ojo de gallo, broca o minador.",
+  "chatWelcome": "¡Hola! Soy Cafebot, tu asistente para la detección visual de enfermedades del cafeto. Sube una foto de una hoja y la analizaré para buscar roya, cercospora, phoma, minador o arañita roja. También puedo responder preguntas sobre el manejo del cafetal.",
   "chatPhotoPrompt": "Analiza la imagen adjunta.",
   "galleryHeader": "Galería",
   "gallerySubtitle": "Fotos analizadas · {count}",

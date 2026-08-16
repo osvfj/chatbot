@@ -15,7 +15,7 @@ router = APIRouter()
 
 SYSTEM_PROMPT = (
     "Eres Cafebot, un asistente experto en la detección y el manejo de enfermedades del cafeto "
-    "(roya, cercospora, ojo de gallo, minador de la hoja, broca, phoma, arañita roja). "
+    "(roya, cercospora, phoma, minador de la hoja y arañita roja). "
     "Responde en el mismo idioma del usuario, con un lenguaje claro y cercano. "
     "Ofrece consejos prácticos de manejo integrado cuando el tema lo requiera."
 )
@@ -66,14 +66,20 @@ def _historia(chat_id):
 def _contexto_deteccion(foto):
     if foto is None or not foto["disease_id"]:
         return None
+    try:
+        top_predictions = json.loads(foto["top_predictions"] or "[]")
+    except (TypeError, json.JSONDecodeError):
+        top_predictions = []
     return {
         "archivo": foto["nombre_archivo"],
+        "status": foto["detector_status"],
         "enfermedad": foto["disease_name"],
         "id_enfermedad": foto["disease_id"],
         "descripcion": foto["description"],
         "confianza": foto["confidence"],
         "severidad": foto["severity"],
         "recomendacion": foto["advice"],
+        "top_predictions": top_predictions,
     }
 
 

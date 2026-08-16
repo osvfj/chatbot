@@ -72,6 +72,12 @@ export interface Foto {
   readonly confidence: number;
   readonly severity: string;
   readonly advice: string;
+  readonly detector_status: string;
+  readonly top_predictions: ReadonlyArray<{
+    readonly disease_id: string;
+    readonly disease_name: string;
+    readonly confidence: number;
+  }>;
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
