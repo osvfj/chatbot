@@ -8,3 +8,5 @@ __pycache__/
 models/
 q_table.json
 feedback.jsonl
+*.db
+storage/

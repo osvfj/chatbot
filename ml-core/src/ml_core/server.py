@@ -7,6 +7,8 @@ from .core.rl import QLearner
 from .core.rules import RuleEngine
 from .core.search import KnowledgeGraph
 from .core.sentiment import analyze as analyze_sentiment
+from .db import init_db
+from .routes import albums, auth, chats
 
 bundle = ClassifierBundle()
 knowledge = KnowledgeGraph()
@@ -16,11 +18,15 @@ learner = QLearner()
 
 @asynccontextmanager
 async def lifespan(_app):
+    init_db()
     bundle.train()
     yield
 
 
 app = FastAPI(title="ml-core", version="0.1.0", lifespan=lifespan)
+app.include_router(auth.router)
+app.include_router(chats.router)
+app.include_router(albums.router)
 
 ALGORITHMS = ("bfs", "dfs", "astar")
 

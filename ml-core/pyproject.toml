@@ -13,6 +13,9 @@ dependencies = [
   "es-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl",
   "pysentimiento>=0.7",
   "networkx>=3.3",
+  "PyJWT>=2.9",
+  "bcrypt>=4.2",
+  "python-multipart>=0.0.9",
 ]
 
 [project.scripts]
