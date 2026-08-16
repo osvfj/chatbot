@@ -1,0 +1,70 @@
+{
+  "start": "inicio",
+  "nodes": {
+    "inicio": { "keywords": [], "response": "" },
+    "saludo": {
+      "keywords": ["hola", "buenas", "saludos", "que tal", "saludo"],
+      "response": "¡Hola! Soy Cafebot, tu asistente para la sanidad del cafeto. Puedo ayudarte a identificar enfermedades (roya, cercospora, ojo de gallo, broca, minador), nutrición, riego o a analizar una foto de una hoja."
+    },
+    "roya": {
+      "keywords": ["roya", "oxido", "oxid", "pustula", "polvo amarillo", "naranja"],
+      "response": "La roya del cafeto (Hemileia vastatrix) se manifiesta como pústulas amarillo-anaranjadas en el envés de la hoja y provoca defoliación severa. Control: podas fitosanitarias, fungicidas de cobre o triazoles en época de lluvias y variedades resistentes como Catimor o Castillo."
+    },
+    "cercospora": {
+      "keywords": ["cercospora", "mancha de hierro", "mancha", "circulo"],
+      "response": "La cercospora (mancha de hierro) produce manchas circulares cafés con centro grisáceo y borde amarillento, favorecida por estrés hídrico y sombra excesiva. Control: regula la sombra, mejora la nutrición con potasio y boro, y aplica fungicidas protectantes en focos iniciales."
+    },
+    "ojo_gallo": {
+      "keywords": ["ojo de gallo", "ojo", "mycena", "sombrilla", "gris"],
+      "response": "El ojo de gallo (Mycena citricolor) genera lesiones circulares grises en zonas de mucha sombra y humedad. Control: reduce la sombra excesiva, mejora la ventilación y aplica fungicidas de contacto en los focos iniciales."
+    },
+    "broca": {
+      "keywords": ["broca", "perforador", "fruto", "cereza", "grano"],
+      "response": "La broca del café (Hypothenemus hampei) perfora los frutos y daña el grano por dentro. Manejo integrado: recolección completa y oportuna, control de frutos caídos y aplicación de Beauveria bassiana en fases tempranas de infestación."
+    },
+    "minador": {
+      "keywords": ["minador", "galeria", "serpiente", "hoja minada"],
+      "response": "El minador de la hoja deja galerías serpentinas y traslúcidas dentro del tejido foliar. Control: evita el estrés de la planta, favorece enemigos naturales y usa insecticidas específicos solo cuando el daño supera el umbral económico."
+    },
+    "nutricion": {
+      "keywords": ["abono", "fertil", "nutri", "potasio", "nitrogeno", "boro", "suelo"],
+      "response": "Una nutrición balanceada fortalece el cafeto frente a enfermedades. Prioriza el análisis de suelo, aplica materia orgánica y asegura potasio y boro, clave para prevenir cercospora y mantener hojas vigorosas."
+    },
+    "riego": {
+      "keywords": ["riego", "agua", "humedad", "sequia", "lluvia", "encharcamiento"],
+      "response": "El café es sensible al déficit y al exceso de agua. Mantén un buen drenaje, riega en épocas secas sin encharcar y monitorea la humedad del suelo para reducir el estrés hídrico, que predispone a cercospora y minador."
+    },
+    "analizar_foto": {
+      "keywords": ["foto", "imagen", "analiza", "subi", "hoja enferma"],
+      "response": "Para analizar la foto adjunta ejecuto mi herramienta de visión y te devuelvo el diagnóstico con su nivel de confianza. Puedo detallarte la enfermedad detectada y las recomendaciones de manejo."
+    },
+    "manejo_integrado": {
+      "keywords": ["manejo integrado", "control biologico", "enemigos naturales", "variedades resistentes"],
+      "response": "El manejo integrado combina prácticas culturales, control biológico, monitoreo y, solo si hace falta, control químico. Favorece enemigos naturales, elimina focos de infección y usa variedades resistentes para reducir el uso de plaguicidas."
+    }
+  },
+  "edges": [
+    { "from": "inicio", "to": "saludo", "weight": 1 },
+    { "from": "inicio", "to": "roya", "weight": 1 },
+    { "from": "inicio", "to": "cercospora", "weight": 1 },
+    { "from": "inicio", "to": "ojo_gallo", "weight": 1 },
+    { "from": "inicio", "to": "broca", "weight": 1 },
+    { "from": "inicio", "to": "minador", "weight": 1 },
+    { "from": "inicio", "to": "nutricion", "weight": 1 },
+    { "from": "inicio", "to": "riego", "weight": 1 },
+    { "from": "inicio", "to": "analizar_foto", "weight": 1 },
+    { "from": "inicio", "to": "manejo_integrado", "weight": 1 },
+    { "from": "saludo", "to": "roya", "weight": 2 },
+    { "from": "saludo", "to": "analizar_foto", "weight": 2 },
+    { "from": "roya", "to": "manejo_integrado", "weight": 2 },
+    { "from": "roya", "to": "nutricion", "weight": 3 },
+    { "from": "cercospora", "to": "nutricion", "weight": 2 },
+    { "from": "cercospora", "to": "riego", "weight": 2 },
+    { "from": "ojo_gallo", "to": "manejo_integrado", "weight": 2 },
+    { "from": "broca", "to": "manejo_integrado", "weight": 2 },
+    { "from": "minador", "to": "manejo_integrado", "weight": 2 },
+    { "from": "nutricion", "to": "cercospora", "weight": 3 },
+    { "from": "riego", "to": "cercospora", "weight": 3 },
+    { "from": "manejo_integrado", "to": "broca", "weight": 2 }
+  ]
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "roya-control-lluvias",
+    "name": "Control de roya en época de lluvias",
+    "condition": {
+      "and": [
+        { "fact": "sintoma", "equals": "pustulas_amarillas" },
+        { "fact": "estacion", "equals": "lluvias" }
+      ]
+    },
+    "conclusion": "Aplicar fungicidas a base de cobre o triazoles y realizar podas fitosanitarias para reducir el inóculo.",
+    "priority": 1
+  },
+  {
+    "id": "cercospora-estres-hidrico",
+    "name": "Cercospora asociada a estrés hídrico",
+    "condition": {
+      "and": [
+        { "fact": "sintoma", "equals": "manchas_circulares" },
+        { "fact": "estres_hidrico", "is_true": true }
+      ]
+    },
+    "conclusion": "Regular la sombra y el riego, y mejorar la nutrición con potasio y boro para reducir la cercospora.",
+    "priority": 1
+  },
+  {
+    "id": "broca-alta-infestacion",
+    "name": "Broca con infestación alta",
+    "condition": {
+      "and": [
+        { "fact": "plaga", "equals": "broca" },
+        { "fact": "infestacion_pct", "gt": 5 }
+      ]
+    },
+    "conclusion": "Recolección completa y oportuna, manejo de frutos caídos y aplicación de Beauveria bassiana.",
+    "priority": 1
+  },
+  {
+    "id": "broca-baja-infestacion",
+    "name": "Broca con infestación baja",
+    "condition": {
+      "and": [
+        { "fact": "plaga", "equals": "broca" },
+        { "fact": "infestacion_pct", "lte": 5 }
+      ]
+    },
+    "conclusion": "Monitoreo semanal y recolección de frutos maduros; no se justifica control químico todavía.",
+    "priority": 1
+  },
+  {
+    "id": "minador-umbral",
+    "name": "Minador bajo el umbral económico",
+    "condition": {
+      "or": [
+        { "fact": "hojas_minadas_pct", "lt": 20 },
+        { "fact": "enemigos_naturales", "is_true": true }
+      ]
+    },
+    "conclusion": "No aplicar insecticidas; favorecer el control biológico y reducir el estrés de la planta.",
+    "priority": 1
+  },
+  {
+    "id": "ojo-gallo-sombra",
+    "name": "Ojo de gallo por sombra excesiva",
+    "condition": {
+      "and": [
+        { "fact": "sintoma", "equals": "lesiones_grises" },
+        { "fact": "sombra_excesiva", "is_true": true }
+      ]
+    },
+    "conclusion": "Reducir la sombra y mejorar la ventilación del cafetal para controlar el ojo de gallo.",
+    "priority": 1
+  },
+  {
+    "id": "elegibilidad-asistencia-tecnica",
+    "name": "Elegibilidad para asistencia técnica del MINAGRI",
+    "condition": {
+      "and": [
+        { "fact": "caficultor", "is_true": true },
+        { "fact": "hectareas", "lte": 10 }
+      ]
+    },
+    "conclusion": "El productor es elegible para el programa de asistencia técnica gratuito (pequeño caficultor).",
+    "priority": 2
+  }
+]
