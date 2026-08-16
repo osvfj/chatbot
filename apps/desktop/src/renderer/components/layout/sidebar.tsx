@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react";
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom } from "@effect/atom-react";
 import { Predicate } from "effect";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
@@ -23,7 +23,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@cafebot/ui/components/sidebar";
-import { conversationUuidAtom, darkModeAtom, detectionsAtom } from "../../lib/atoms";
+import { conversationUuidAtom, darkModeAtom } from "../../lib/atoms";
+import { useAlbums } from "../../lib/use-gallery";
 import { applyTheme, storeTheme } from "../../lib/theme";
 import { cycleLanguage, useLanguage, useMessages } from "../../lib/use-language";
 import { ZenSettingsDialog } from "./zen-settings-dialog";
@@ -31,7 +32,8 @@ import { ZenSettingsDialog } from "./zen-settings-dialog";
 export function AppSidebar() {
   const m = useMessages();
   const [conversationUuid] = useAtom(conversationUuidAtom);
-  const detections = useAtomValue(detectionsAtom);
+  const { data } = useAlbums();
+  const albumCount = data?.albums.length ?? 0;
   const [dark, setDark] = useAtom(darkModeAtom);
   const [language, setLanguage] = useLanguage();
   const { pathname } = useLocation();
@@ -92,9 +94,7 @@ export function AppSidebar() {
                 >
                   <ImagesIcon />
                   <span>{m.navGallery()}</span>
-                  {detections.length > 0 && (
-                    <SidebarMenuBadge>{detections.length}</SidebarMenuBadge>
-                  )}
+                  {albumCount > 0 && <SidebarMenuBadge>{albumCount}</SidebarMenuBadge>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

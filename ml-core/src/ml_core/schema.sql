@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS foto (
   mime TEXT NOT NULL,
   disease_id TEXT,
   disease_name TEXT,
+  description TEXT,
   confidence REAL,
   severity TEXT,
   advice TEXT,

@@ -68,6 +68,7 @@ export interface Foto {
   readonly nombre_archivo: string;
   readonly disease_id: string;
   readonly disease_name: string;
+  readonly description: string;
   readonly confidence: number;
   readonly severity: string;
   readonly advice: string;
@@ -122,6 +123,9 @@ export const api = {
     request(`/chats/${chatId}/messages`),
 
   listAlbums: (): Promise<{ readonly albums: ReadonlyArray<Album> }> => request("/albums"),
+
+  albumPhotos: (albumId: string): Promise<{ readonly photos: ReadonlyArray<Foto> }> =>
+    request(`/albums/${albumId}/photos`),
 
   uploadPhoto: (chatId: string, file: File): Promise<Foto> => {
     const form = new FormData();

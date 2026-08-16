@@ -3,9 +3,9 @@ import { Predicate } from "effect";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronLeftIcon, MessageCircleIcon } from "lucide-react";
 import { Button } from "@cafebot/ui/components/button";
-import { useGallery } from "../../lib/use-gallery";
+import { useAlbums, useAlbumPhotos } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
-import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
+import type { Foto } from "../../lib/backend";
 import { DetectionCard } from "./detection-card";
 import { DetectionDialog } from "./detection-dialog";
 
@@ -16,9 +16,10 @@ interface AlbumViewProps {
 export function AlbumView({ conversationUuid }: AlbumViewProps) {
   const m = useMessages();
   const navigate = useNavigate();
-  const { albums, removeDetection } = useGallery();
-  const [selected, setSelected] = useState<DetectionCardModel | null>(null);
-  const album = albums.find((item) => item.conversationUuid === conversationUuid);
+  const { data } = useAlbums();
+  const album = data?.albums.find((item) => item.chat_id === conversationUuid);
+  const [selected, setSelected] = useState<Foto | null>(null);
+  const photosQuery = useAlbumPhotos(album?.id ?? "");
 
   if (Predicate.isUndefined(album)) {
     return (
@@ -31,6 +32,8 @@ export function AlbumView({ conversationUuid }: AlbumViewProps) {
       </div>
     );
   }
+
+  const photos = photosQuery.data?.photos ?? [];
 
   const goToChat = (): void => {
     navigate({ to: "/chat/$uuid", params: { uuid: conversationUuid } });
@@ -49,9 +52,9 @@ export function AlbumView({ conversationUuid }: AlbumViewProps) {
             <ChevronLeftIcon />
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight">{album.title}</h1>
+            <h1 className="truncate text-lg font-semibold tracking-tight">{album.titulo}</h1>
             <p className="text-sm text-muted-foreground">
-              {m.albumPhotos({ count: album.photos.length })}
+              {m.albumPhotos({ count: photos.length })}
             </p>
           </div>
         </div>
@@ -62,18 +65,13 @@ export function AlbumView({ conversationUuid }: AlbumViewProps) {
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-slim p-6">
         <div className="columns-2 gap-4 md:columns-3 xl:columns-4">
-          {album.photos.map((card) => (
-            <DetectionCard
-              key={card.detection.id}
-              card={card}
-              onOpen={() => setSelected(card)}
-              onRemove={() => removeDetection(card.detection.id)}
-            />
+          {photos.map((foto) => (
+            <DetectionCard key={foto.id} foto={foto} onOpen={() => setSelected(foto)} />
           ))}
         </div>
       </div>
       {!Predicate.isNull(selected) && (
-        <DetectionDialog card={selected} onClose={() => setSelected(null)} onGoToChat={goToChat} />
+        <DetectionDialog foto={selected} onClose={() => setSelected(null)} onGoToChat={goToChat} />
       )}
     </div>
   );

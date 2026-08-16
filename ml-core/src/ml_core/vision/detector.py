@@ -54,6 +54,7 @@ def detect(bytes_data):
     return {
         "disease_id": disease_id,
         "disease_name": info.get("name", disease_id),
+        "description": info.get("description", ""),
         "confidence": round(float(probs[indice]), 4),
         "severity": info.get("severity"),
         "advice": info.get("advice"),

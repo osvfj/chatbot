@@ -1,6 +1,5 @@
 import { DateTime } from "effect";
 import * as m from "@cafebot/i18n";
-import type { DiseaseInfo } from "@cafebot/sdk";
 
 export const formatBytes = (bytes: number): string => {
   if (bytes < 1024) {
@@ -20,7 +19,7 @@ export const formatTime = (utc: DateTime.Utc): string =>
     minute: "2-digit",
   }).format(DateTime.toDate(utc));
 
-export const severityLabel = (severity: DiseaseInfo["severity"]): string => {
+export const severityLabel = (severity: string): string => {
   switch (severity) {
     case "none":
       return m.severityNone();
@@ -30,5 +29,7 @@ export const severityLabel = (severity: DiseaseInfo["severity"]): string => {
       return m.severityMedium();
     case "high":
       return m.severityHigh();
+    default:
+      return m.severityNone();
   }
 };

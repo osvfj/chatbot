@@ -3,7 +3,7 @@ import { Atom } from "effect/unstable/reactivity";
 export interface PendingReply {
   readonly chatId: string;
   readonly content: string;
-  readonly context: string;
+  readonly fotoId?: string | undefined;
   readonly key: string;
 }
 

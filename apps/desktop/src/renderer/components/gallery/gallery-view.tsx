@@ -9,14 +9,15 @@ import {
 } from "@cafebot/ui/components/empty";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Spinner } from "@cafebot/ui/components/spinner";
-import { useGallery } from "../../lib/use-gallery";
+import { useAlbums } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
 import { AlbumCard } from "./album-card";
 
 export function GalleryView() {
   const m = useMessages();
   const navigate = useNavigate();
-  const { albums, isAnalyzing } = useGallery();
+  const { data, isFetching } = useAlbums();
+  const albums = data?.albums ?? [];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -30,7 +31,7 @@ export function GalleryView() {
             </p>
           </div>
         </div>
-        {isAnalyzing && (
+        {isFetching && (
           <span className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner className="size-4" />
             {m.galleryAnalyzing()}
@@ -52,11 +53,9 @@ export function GalleryView() {
           <div className="columns-2 gap-4 md:columns-3 xl:columns-4">
             {albums.map((album) => (
               <AlbumCard
-                key={album.conversationUuid}
+                key={album.id}
                 album={album}
-                onOpen={() =>
-                  navigate({ to: "/gallery/$uuid", params: { uuid: album.conversationUuid } })
-                }
+                onOpen={() => navigate({ to: "/gallery/$uuid", params: { uuid: album.chat_id } })}
               />
             ))}
           </div>

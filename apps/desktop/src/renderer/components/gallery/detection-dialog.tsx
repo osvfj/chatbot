@@ -1,6 +1,7 @@
-import type { DetectionCard as DetectionCardModel } from "../../lib/atoms";
+import type { Foto } from "../../lib/backend";
 import { formatPercent, severityLabel } from "../../lib/format";
 import { useMessages } from "../../lib/use-language";
+import { usePhotoUrl } from "../../lib/use-photo";
 import { MessageCircleIcon } from "lucide-react";
 import { Button } from "@cafebot/ui/components/button";
 import {
@@ -13,15 +14,15 @@ import {
 } from "@cafebot/ui/components/dialog";
 
 interface DetectionDialogProps {
-  readonly card: DetectionCardModel;
+  readonly foto: Foto;
   readonly onClose: () => void;
   readonly onGoToChat: () => void;
 }
 
-export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogProps) {
+export function DetectionDialog({ foto, onClose, onGoToChat }: DetectionDialogProps) {
   const m = useMessages();
-  const { detection } = card;
-  const confidence = Math.round(detection.confidence * 100);
+  const imageUrl = usePhotoUrl(foto.id);
+  const confidence = Math.round(foto.confidence * 100);
 
   return (
     <Dialog
@@ -34,28 +35,28 @@ export function DetectionDialog({ card, onClose, onGoToChat }: DetectionDialogPr
     >
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-lg flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle>{detection.disease.name}</DialogTitle>
+          <DialogTitle>{foto.disease_name}</DialogTitle>
           <DialogDescription>
             {m.galleryDialogDescription({
-              fileName: detection.fileName,
-              confidence: formatPercent(detection.confidence),
-              severity: severityLabel(detection.disease.severity),
+              fileName: foto.nombre_archivo,
+              confidence: formatPercent(foto.confidence),
+              severity: severityLabel(foto.severity),
             })}
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto scrollbar-slim text-sm">
           <img
-            src={card.imageUrl}
-            alt={detection.fileName}
+            src={imageUrl}
+            alt={foto.nombre_archivo}
             className="w-full rounded-xl border border-border object-cover"
           />
           <div>
             <p className="mb-1 font-medium">{m.galleryDescription()}</p>
-            <p className="text-muted-foreground">{detection.disease.description}</p>
+            <p className="text-muted-foreground">{foto.description}</p>
           </div>
           <div>
             <p className="mb-1 font-medium">{m.galleryRecommendation()}</p>
-            <p className="text-muted-foreground">{detection.disease.advice}</p>
+            <p className="text-muted-foreground">{foto.advice}</p>
           </div>
           <div>
             <div className="mb-1.5 flex items-center justify-between">

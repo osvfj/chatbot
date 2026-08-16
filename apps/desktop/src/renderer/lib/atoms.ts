@@ -1,17 +1,9 @@
 import { DateTime, Effect, Predicate } from "effect";
 import { Atom } from "effect/unstable/reactivity";
 import * as m from "@cafebot/i18n";
-import { ChatMessage, DetectionResult } from "@cafebot/sdk";
-import { Api } from "../services/api";
+import { ChatMessage } from "@cafebot/sdk";
 import { getStoredTheme, prefersDarkColorScheme } from "./theme";
 import type { Session } from "./backend";
-
-export interface DetectionCard {
-  readonly detection: InstanceType<typeof DetectionResult>;
-  readonly imageUrl: string;
-  readonly sizeBytes: number;
-  readonly conversationUuid: string;
-}
 
 export interface ConversationMeta {
   readonly title: string;
@@ -37,8 +29,6 @@ export const messagesAtom = Atom.make<ReadonlyArray<InstanceType<typeof ChatMess
   welcomeMessage,
 ]).pipe(Atom.keepAlive);
 
-export const detectionsAtom = Atom.make<ReadonlyArray<DetectionCard>>([]).pipe(Atom.keepAlive);
-
 export const suggestionsAtom = Atom.make<ReadonlyArray<string>>([]).pipe(Atom.keepAlive);
 
 const storedTheme = getStoredTheme();
@@ -46,5 +36,3 @@ const storedTheme = getStoredTheme();
 export const darkModeAtom = Atom.make(
   Predicate.isNull(storedTheme) ? prefersDarkColorScheme() : storedTheme,
 ).pipe(Atom.keepAlive);
-
-export const analyzeImageFn = Api.mutation("AnalyzeImage").pipe(Atom.keepAlive);

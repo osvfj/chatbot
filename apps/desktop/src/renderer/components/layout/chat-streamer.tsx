@@ -31,11 +31,10 @@ export function ChatStreamer() {
     abortRef.current?.abort();
     abortRef.current = controller;
     setStreamText("");
-    const prompt =
-      pending.context.length === 0 ? pending.content : `${pending.content}\n\n${pending.context}`;
     void streamChat({
       chatId: pending.chatId,
-      content: prompt,
+      content: pending.content,
+      ...(pending.fotoId === undefined ? {} : { fotoId: pending.fotoId }),
       apiKey,
       model,
       endpoint: zenEndpoint(account),

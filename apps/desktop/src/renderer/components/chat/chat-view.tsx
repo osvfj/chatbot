@@ -4,12 +4,12 @@ import { DateTime, Predicate } from "effect";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "@effect/atom-react";
-import { ChatMessage, DetectionResult } from "@cafebot/sdk";
+import { ChatMessage } from "@cafebot/sdk";
 import { Button } from "@cafebot/ui/components/button";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
 import { useChat } from "../../lib/use-chat";
-import { useGallery } from "../../lib/use-gallery";
+import { useUploadPhoto } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
 import { conversationMetaAtom, conversationUuidAtom, messagesAtom } from "../../lib/atoms";
 import { api } from "../../lib/backend";
@@ -34,9 +34,9 @@ export function ChatView({ conversationId }: ChatViewProps) {
     streaming,
     clearStreaming,
   } = useChat();
-  const { isAnalyzing, analyzeFile } = useGallery();
+  const uploadPhoto = useUploadPhoto();
   const [, setMessages] = useAtom(messagesAtom);
-  const busy = isWaiting || isAnalyzing;
+  const busy = isWaiting || uploadPhoto.isPending;
 
   const history = useQuery({
     queryKey: ["messages", conversationId ?? "none"],
@@ -114,15 +114,12 @@ export function ChatView({ conversationId }: ChatViewProps) {
     );
     appendUserMessage(trimmed, attachmentData);
     if (attachments.length > 0) {
-      const detections: Array<DetectionResult> = [];
+      let fotoId: string | undefined;
       for (const file of attachments) {
-        const detection = await analyzeFile(file, chatId);
-        if (Predicate.isNotUndefined(detection)) {
-          detections.push(detection);
-        }
+        const foto = await uploadPhoto.mutateAsync({ chatId, file });
+        fotoId = foto.id;
       }
-      const context = detections.map(describeDetection).join("\n");
-      sendReply(chatId, trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), context);
+      sendReply(chatId, trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), fotoId);
     } else {
       sendReply(chatId, trimmed);
     }
@@ -159,17 +156,10 @@ export function ChatView({ conversationId }: ChatViewProps) {
       <ChatInput
         onSend={handleSend}
         disabled={busy}
-        analyzing={isAnalyzing}
+        analyzing={uploadPhoto.isPending}
         streaming={streaming !== null}
         onStop={clearStreaming}
       />
     </div>
   );
 }
-
-const describeDetection = (detection: DetectionResult): string =>
-  `[Análisis de imagen: ${detection.fileName} — ${detection.disease.name}, confianza ${Math.round(
-    detection.confidence * 100,
-  )}%, severidad ${detection.disease.severity}. ${detection.disease.description} Recomendación: ${
-    detection.disease.advice
-  }]`;

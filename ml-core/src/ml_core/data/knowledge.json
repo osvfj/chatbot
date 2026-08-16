@@ -39,7 +39,12 @@
       "response": "Para analizar la foto adjunta ejecuto mi herramienta de visión y te devuelvo el diagnóstico con su nivel de confianza. Puedo detallarte la enfermedad detectada y las recomendaciones de manejo."
     },
     "manejo_integrado": {
-      "keywords": ["manejo integrado", "control biologico", "enemigos naturales", "variedades resistentes"],
+      "keywords": [
+        "manejo integrado",
+        "control biologico",
+        "enemigos naturales",
+        "variedades resistentes"
+      ],
       "response": "El manejo integrado combina prácticas culturales, control biológico, monitoreo y, solo si hace falta, control químico. Favorece enemigos naturales, elimina focos de infección y usa variedades resistentes para reducir el uso de plaguicidas."
     }
   },

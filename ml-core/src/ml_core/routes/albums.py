@@ -39,6 +39,18 @@ def list_albums(auth=Depends(require_user)):
     return {"albums": [dict(r) for r in rows]}
 
 
+@router.get("/albums/{album_id}/photos")
+def album_photos(album_id: str, auth=Depends(require_user)):
+    conn = connect()
+    rows = conn.execute(
+        "SELECT id, chat_id, nombre_archivo, disease_id, disease_name, description, confidence, severity, advice, creado_en "
+        "FROM foto WHERE album_id = ? AND finca_id = ? ORDER BY creado_en ASC",
+        (album_id, auth["finca"]),
+    ).fetchall()
+    conn.close()
+    return {"photos": [dict(r) for r in rows]}
+
+
 @router.post("/chats/{chat_id}/photos")
 def upload_photo(
     chat_id: str,
@@ -58,12 +70,14 @@ def upload_photo(
     deteccion = detector.detect(bytes_data)
     disease_id = ""
     disease_name = ""
+    description = ""
     confidence = 0.0
     severity = ""
     advice = ""
     if deteccion is not None:
         disease_id = deteccion["disease_id"]
         disease_name = deteccion["disease_name"]
+        description = deteccion["description"] or ""
         confidence = deteccion["confidence"]
         severity = deteccion["severity"] or ""
         advice = deteccion["advice"] or ""
@@ -80,8 +94,8 @@ def upload_photo(
     else:
         album_id = album["id"]
     conn.execute(
-        "INSERT INTO foto (id, album_id, chat_id, finca_id, archivo, nombre_archivo, mime, disease_id, disease_name, confidence, severity, advice, creado_en) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO foto (id, album_id, chat_id, finca_id, archivo, nombre_archivo, mime, disease_id, disease_name, description, confidence, severity, advice, creado_en) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             foto_id,
             album_id,
@@ -92,6 +106,7 @@ def upload_photo(
             file.content_type or "image/jpeg",
             disease_id,
             disease_name,
+            description,
             confidence,
             severity,
             advice,
@@ -107,6 +122,7 @@ def upload_photo(
         "nombre_archivo": nombre_archivo,
         "disease_id": disease_id,
         "disease_name": disease_name,
+        "description": description,
         "confidence": confidence,
         "severity": severity,
         "detector_disponible": detector.available(),

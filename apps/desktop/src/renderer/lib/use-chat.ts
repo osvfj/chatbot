@@ -34,13 +34,18 @@ export function useChat() {
   );
 
   const sendReply = useCallback(
-    (chatId: string, content: string, context = ""): void => {
+    (chatId: string, content: string, fotoId?: string | undefined): void => {
       const trimmed = content.trim();
       if (trimmed.length === 0) {
         return;
       }
       setSuggestions([]);
-      setStreaming({ chatId, content: trimmed, context, key: crypto.randomUUID() });
+      setStreaming({
+        chatId,
+        content: trimmed,
+        ...(fotoId === undefined ? {} : { fotoId }),
+        key: crypto.randomUUID(),
+      });
     },
     [setSuggestions, setStreaming],
   );
