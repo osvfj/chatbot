@@ -1,17 +1,6 @@
-"""Servidor FastAPI del núcleo de razonamiento clásico de Cafebot.
-
-Sidecar HTTP que expone los componentes clásicos de IA (búsqueda, reglas, PLN,
-clasificadores y aprendizaje por refuerzo) para ser consumido por la app de
-escritorio. Escucha en http://127.0.0.1:8765.
-"""
-
-from __future__ import annotations
-
 from contextlib import asynccontextmanager
-from typing import Literal
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
 
 from .core.classifiers import ClassifierBundle
 from .core.rl import QLearner
@@ -26,97 +15,84 @@ learner = QLearner()
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):
+async def lifespan(_app):
     bundle.train()
     yield
 
 
 app = FastAPI(title="ml-core", version="0.1.0", lifespan=lifespan)
 
-
-class TextRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=2000)
-
-
-class SearchRequest(TextRequest):
-    algorithm: Literal["bfs", "dfs", "astar"] = "astar"
-
-
-class FactsRequest(BaseModel):
-    facts: dict[str, object] = Field(default_factory=dict)
-
-
-class RateRequest(BaseModel):
-    state: str = Field(..., min_length=1)
-    action: Literal["kb", "tree", "llm"]
-    reward: float = Field(..., ge=-1.0, le=1.0)
+ALGORITHMS = ("bfs", "dfs", "astar")
 
 
 @app.get("/health")
-def health() -> dict:
+def health():
     return {"status": "ok", "trained": bundle.trained}
 
 
 @app.post("/intent")
-def intent(request: TextRequest) -> dict:
-    prediction = bundle.predict(request.text)
-    return {
-        "text": request.text,
-        **prediction,
-    }
+def intent(body: dict):
+    text = str(body.get("text", ""))
+    return {"text": text, **bundle.predict(text)}
 
 
 @app.post("/sentiment")
-def sentiment(request: TextRequest) -> dict:
-    return {"text": request.text, **analyze_sentiment(request.text)}
+def sentiment(body: dict):
+    text = str(body.get("text", ""))
+    return {"text": text, **analyze_sentiment(text)}
 
 
 @app.post("/search")
-def search(request: SearchRequest) -> dict:
-    return knowledge.search(request.text, request.algorithm)
+def search(body: dict):
+    text = str(body.get("text", ""))
+    algorithm = body.get("algorithm", "astar")
+    if algorithm not in ALGORITHMS:
+        algorithm = "astar"
+    return knowledge.search(text, algorithm)
 
 
 @app.post("/rules")
-def rules_endpoint(request: FactsRequest) -> dict:
-    return rules.evaluate(request.facts)
+def rules_endpoint(body: dict):
+    facts = body.get("facts", {})
+    if not isinstance(facts, dict):
+        facts = {}
+    return rules.evaluate(facts)
 
 
 @app.post("/rate")
-def rate(request: RateRequest) -> dict:
-    learner.update(request.state, request.action, request.reward)
-    learner.record(request.state, request.action, request.reward)
-    return {
-        "state": request.state,
-        "action": request.action,
-        "reward": request.reward,
-        "q": learner.q.get(request.state, {}),
-    }
+def rate(body: dict):
+    state = str(body.get("state", ""))
+    action = body.get("action", "llm")
+    if action not in ("kb", "tree", "llm"):
+        action = "llm"
+    reward = float(body.get("reward", 0.0))
+    learner.update(state, action, reward)
+    learner.record(state, action, reward)
+    return {"state": state, "action": action, "reward": reward, "q": learner.q.get(state, {})}
 
 
 @app.post("/choose")
-def choose(request: TextRequest) -> dict:
-    prediction = bundle.predict(request.text)
+def choose(body: dict):
+    text = str(body.get("text", ""))
+    prediction = bundle.predict(text)
     state = prediction["ensemble"]
     action = learner.choose(state)
     return {"state": state, "action": action, "intent": prediction}
 
 
 @app.post("/perceptron")
-def perceptron(request: TextRequest) -> dict:
-    prediction = bundle.predict(request.text)
-    return {
-        "text": request.text,
-        "label": prediction["mlp"]["intent"],
-        "confidence": prediction["mlp"]["confidence"],
-    }
+def perceptron(body: dict):
+    text = str(body.get("text", ""))
+    prediction = bundle.predict(text)
+    return {"text": text, "label": prediction["mlp"]["intent"], "confidence": prediction["mlp"]["confidence"]}
 
 
 @app.get("/metrics")
-def metrics() -> dict:
+def metrics():
     return {"dataset_size": len(bundle.texts), "classes": bundle.classes, "results": bundle.metrics()}
 
 
-def main() -> None:
+def main():
     import uvicorn
 
     uvicorn.run(app, host="127.0.0.1", port=8765)

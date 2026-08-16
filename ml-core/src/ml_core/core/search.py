@@ -1,55 +1,38 @@
-"""Búsqueda en el espacio de estados de la conversación.
-
-El chatbot representa los posibles caminos de un diálogo como un grafo de
-intenciones. Dado el texto del usuario, busca el nodo meta (intención) usando:
-
-- BFS: búsqueda ciega por amplitud (camino más corto en pasos).
-- DFS: búsqueda ciega por profundidad.
-- A*: búsqueda heurística que combina costo acumulado (g) con una heurística
-  (h) basada en la similitud de tokens entre la consulta y el nodo.
-"""
-
-from __future__ import annotations
-
 import heapq
 import json
 from pathlib import Path
-from typing import Literal
 
 from .nlp import normalize, token_overlap, tokenize
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-Algorithm = Literal["bfs", "dfs", "astar"]
-
 
 class KnowledgeGraph:
-    def __init__(self, path: Path = DATA_DIR / "knowledge.json") -> None:
+    def __init__(self, path=DATA_DIR / "knowledge.json"):
         raw = json.loads(path.read_text(encoding="utf-8"))
         self.start = raw["start"]
-        self.nodes: dict[str, dict] = raw["nodes"]
-        self.keyword_sets: dict[str, set[str]] = {
+        self.nodes = raw["nodes"]
+        self.keyword_sets = {
             node_id: {t for kw in node["keywords"] for t in tokenize(kw)}
             for node_id, node in self.nodes.items()
         }
-        self.neighbors: dict[str, list[tuple[str, float]]] = {node_id: [] for node_id in self.nodes}
+        self.neighbors = {node_id: [] for node_id in self.nodes}
         for edge in raw["edges"]:
             self.neighbors[edge["from"]].append((edge["to"], float(edge["weight"])))
 
-    def _query_tokens(self, query: str) -> set[str]:
+    def _query_tokens(self, query):
         return set(tokenize(normalize(query)))
 
-    def _goal(self, node_id: str, query_tokens: set[str]) -> bool:
+    def _goal(self, node_id, query_tokens):
         return bool(self.keyword_sets.get(node_id) & query_tokens)
 
-    def _heuristic(self, node_id: str, query_tokens: set[str]) -> float:
-        # h = 1 - similitud de tokens: nodos con más coincidencia quedan más cerca.
+    def _heuristic(self, node_id, query_tokens):
         return 1.0 - token_overlap(self.keyword_sets.get(node_id, set()), query_tokens)
 
-    def bfs(self, query: str) -> dict:
+    def bfs(self, query):
         query_tokens = self._query_tokens(query)
         visited = {self.start}
-        queue: list[list[str]] = [[self.start]]
+        queue = [[self.start]]
         while queue:
             path = queue.pop(0)
             node = path[-1]
@@ -61,11 +44,11 @@ class KnowledgeGraph:
                     queue.append(path + [nxt])
         return {"path": [], "cost": float("inf")}
 
-    def dfs(self, query: str) -> dict:
+    def dfs(self, query):
         query_tokens = self._query_tokens(query)
-        visited: set[str] = set()
+        visited = set()
 
-        def visit(path: list[str]) -> dict | None:
+        def visit(path):
             node = path[-1]
             if node in visited:
                 return None
@@ -81,14 +64,11 @@ class KnowledgeGraph:
         result = visit([self.start])
         return result if result is not None else {"path": [], "cost": float("inf")}
 
-    def astar(self, query: str) -> dict:
+    def astar(self, query):
         query_tokens = self._query_tokens(query)
-        # frontera: (f, g, nodo, camino)
-        frontier: list[tuple[float, float, str, list[str]]] = [
-            (self._heuristic(self.start, query_tokens), 0.0, self.start, [self.start])
-        ]
+        frontier = [(self._heuristic(self.start, query_tokens), 0.0, self.start, [self.start])]
         heapq.heapify(frontier)
-        best_g: dict[str, float] = {self.start: 0.0}
+        best_g = {self.start: 0.0}
 
         while frontier:
             _f, g, node, path = heapq.heappop(frontier)
@@ -104,15 +84,16 @@ class KnowledgeGraph:
                     heapq.heappush(frontier, (g2 + h, g2, nxt, path + [nxt]))
         return {"path": [], "cost": float("inf")}
 
-    def search(self, query: str, algorithm: Algorithm = "astar") -> dict:
-        result = (
-            self.bfs(query) if algorithm == "bfs"
-            else self.dfs(query) if algorithm == "dfs"
-            else self.astar(query)
-        )
+    def search(self, query, algorithm="astar"):
+        if algorithm == "bfs":
+            result = self.bfs(query)
+        elif algorithm == "dfs":
+            result = self.dfs(query)
+        else:
+            result = self.astar(query)
         path = result["path"]
         if not path:
-            return {"found": False, "algorithm": algorithm, "response": None, "path": [], "cost": result["cost"]}
+            return {"found": False, "algorithm": algorithm, "response": None, "path": [], "cost": None}
         goal = path[-1]
         return {
             "found": True,

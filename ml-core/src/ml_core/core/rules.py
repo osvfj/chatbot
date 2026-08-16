@@ -1,21 +1,17 @@
-"""Motor de reglas de negocio (lógica proposicional y de primer orden).
-
-Evalúa hechos del usuario contra reglas con condiciones compuestas (AND / OR /
-NOT) y operadores de comparación (equals, gt, gte, lt, lte, ne, is_true,
-is_false). Devuelve las reglas aplicadas con su explicación en lenguaje natural,
-lo que da trazabilidad a las decisiones del chatbot.
-"""
-
-from __future__ import annotations
-
 import json
 from pathlib import Path
-from typing import Any
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
-def _evaluate(condition: dict[str, Any], facts: dict[str, Any]) -> bool:
+def _num(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float("-inf")
+
+
+def _evaluate(condition, facts):
     if "and" in condition:
         return all(_evaluate(sub, facts) for sub in condition["and"])
     if "or" in condition:
@@ -24,7 +20,6 @@ def _evaluate(condition: dict[str, Any], facts: dict[str, Any]) -> bool:
         return not _evaluate(condition["not"], facts)
 
     fact = facts.get(condition["fact"])
-
     comparison_ops = ("equals", "ne", "gt", "gte", "lt", "lte")
     if condition["fact"] not in facts and any(op in condition for op in comparison_ops):
         return False
@@ -48,14 +43,7 @@ def _evaluate(condition: dict[str, Any], facts: dict[str, Any]) -> bool:
     return False
 
 
-def _num(value: Any) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float("-inf")
-
-
-def _render(condition: dict[str, Any]) -> str:
+def _render(condition):
     if "and" in condition:
         return " Y ".join(f"({_render(sub)})" for sub in condition["and"])
     if "or" in condition:
@@ -84,10 +72,10 @@ def _render(condition: dict[str, Any]) -> str:
 
 
 class RuleEngine:
-    def __init__(self, path: Path = DATA_DIR / "rules.json") -> None:
+    def __init__(self, path=DATA_DIR / "rules.json"):
         self.rules = json.loads(path.read_text(encoding="utf-8"))
 
-    def evaluate(self, facts: dict[str, Any]) -> dict:
+    def evaluate(self, facts):
         applied = []
         for rule in self.rules:
             if _evaluate(rule["condition"], facts):
@@ -101,7 +89,4 @@ class RuleEngine:
                     }
                 )
         applied.sort(key=lambda r: r["priority"])
-        return {
-            "applied": applied,
-            "conclusion": applied[0]["conclusion"] if applied else None,
-        }
+        return {"applied": applied, "conclusion": applied[0]["conclusion"] if applied else None}

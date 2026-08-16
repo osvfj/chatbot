@@ -14,7 +14,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "clean": "pnpm -r clean",
-    "ml:dev": "cd ml-core && uv run python -m ml_core.server"
+    "ml:dev": "cd ml-core && uv run python -m spacy download es_core_news_sm && uv run python -m ml_core.server"
   },
   "devDependencies": {
     "@effect/language-service": "0.87.2",

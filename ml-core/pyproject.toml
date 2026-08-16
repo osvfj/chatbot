@@ -2,13 +2,15 @@
 name = "ml-core"
 version = "0.1.0"
 description = "Núcleo de razonamiento clásico de Cafebot: búsqueda, reglas, PLN, clasificadores y aprendizaje por refuerzo."
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn>=0.30",
   "scikit-learn>=1.5",
   "numpy>=1.26",
   "joblib>=1.4",
+  "spacy>=3.7",
+  "pysentimiento>=0.7",
 ]
 
 [project.scripts]
