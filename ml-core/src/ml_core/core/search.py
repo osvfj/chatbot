@@ -1,8 +1,9 @@
-import heapq
 import json
 from pathlib import Path
 
-from .nlp import normalize, token_overlap, tokenize
+import networkx as nx
+
+from .nlp import normalize, tokenize
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -16,73 +17,56 @@ class KnowledgeGraph:
             node_id: {t for kw in node["keywords"] for t in tokenize(kw)}
             for node_id, node in self.nodes.items()
         }
-        self.neighbors = {node_id: [] for node_id in self.nodes}
+        self.graph = nx.DiGraph()
+        self.graph.add_nodes_from(self.nodes)
         for edge in raw["edges"]:
-            self.neighbors[edge["from"]].append((edge["to"], float(edge["weight"])))
+            self.graph.add_edge(edge["from"], edge["to"], weight=float(edge["weight"]))
 
     def _query_tokens(self, query):
         return set(tokenize(normalize(query)))
 
-    def _goal(self, node_id, query_tokens):
-        return bool(self.keyword_sets.get(node_id) & query_tokens)
+    def _goal_nodes(self, query_tokens):
+        return [n for n in self.nodes if self.keyword_sets[n] & query_tokens]
 
-    def _heuristic(self, node_id, query_tokens):
-        return 1.0 - token_overlap(self.keyword_sets.get(node_id, set()), query_tokens)
+    def _heuristic(self, node, query_tokens):
+        keywords = self.keyword_sets[node]
+        if not keywords and not query_tokens:
+            return 1.0
+        return 1.0 - len(keywords & query_tokens) / max(1.0, len(keywords | query_tokens))
 
     def bfs(self, query):
         query_tokens = self._query_tokens(query)
-        visited = {self.start}
-        queue = [[self.start]]
-        while queue:
-            path = queue.pop(0)
-            node = path[-1]
-            if self._goal(node, query_tokens):
+        goals = self._goal_nodes(query_tokens)
+        for node in nx.bfs_tree(self.graph, self.start):
+            if node in goals:
+                path = nx.shortest_path(self.graph, self.start, node)
                 return {"path": path, "cost": len(path) - 1}
-            for nxt, _weight in self.neighbors.get(node, []):
-                if nxt not in visited:
-                    visited.add(nxt)
-                    queue.append(path + [nxt])
-        return {"path": [], "cost": float("inf")}
+        return {"path": [], "cost": None}
 
     def dfs(self, query):
         query_tokens = self._query_tokens(query)
-        visited = set()
-
-        def visit(path):
-            node = path[-1]
-            if node in visited:
-                return None
-            visited.add(node)
-            if self._goal(node, query_tokens):
+        goals = self._goal_nodes(query_tokens)
+        tree = nx.dfs_tree(self.graph, self.start)
+        for node in nx.dfs_preorder_nodes(self.graph, self.start):
+            if node in goals:
+                path = nx.shortest_path(tree, self.start, node)
                 return {"path": path, "cost": len(path) - 1}
-            for nxt, _weight in self.neighbors.get(node, []):
-                found = visit(path + [nxt])
-                if found is not None:
-                    return found
-            return None
-
-        result = visit([self.start])
-        return result if result is not None else {"path": [], "cost": float("inf")}
+        return {"path": [], "cost": None}
 
     def astar(self, query):
         query_tokens = self._query_tokens(query)
-        frontier = [(self._heuristic(self.start, query_tokens), 0.0, self.start, [self.start])]
-        heapq.heapify(frontier)
-        best_g = {self.start: 0.0}
-
-        while frontier:
-            _f, g, node, path = heapq.heappop(frontier)
-            if self._goal(node, query_tokens):
-                return {"path": path, "cost": round(g, 4)}
-            if g > best_g.get(node, float("inf")):
-                continue
-            for nxt, weight in self.neighbors.get(node, []):
-                g2 = g + weight
-                if g2 < best_g.get(nxt, float("inf")):
-                    best_g[nxt] = g2
-                    h = self._heuristic(nxt, query_tokens)
-                    heapq.heappush(frontier, (g2 + h, g2, nxt, path + [nxt]))
-        return {"path": [], "cost": float("inf")}
+        goals = self._goal_nodes(query_tokens)
+        if not goals:
+            return {"path": [], "cost": None}
+        goal = min(goals, key=lambda n: self._heuristic(n, query_tokens))
+        path = nx.astar_path(
+            self.graph,
+            self.start,
+            goal,
+            heuristic=lambda n, _target: self._heuristic(n, query_tokens),
+        )
+        cost = sum(self.graph[u][v]["weight"] for u, v in zip(path, path[1:]))
+        return {"path": path, "cost": round(cost, 4)}
 
     def search(self, query, algorithm="astar"):
         if algorithm == "bfs":

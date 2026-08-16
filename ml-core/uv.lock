@@ -494,6 +494,14 @@ wheels = [
 ]
 
 [[package]]
+name = "es-core-news-sm"
+version = "3.8.0"
+source = { url = "https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl" }
+wheels = [
+    { url = "https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl", hash = "sha256:e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12" },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.141.1"
 source = { registry = "https://pypi.org/simple" }
@@ -786,8 +794,10 @@ name = "ml-core"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "es-core-news-sm" },
     { name = "fastapi" },
     { name = "joblib" },
+    { name = "networkx" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pysentimiento" },
@@ -798,8 +808,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "es-core-news-sm", url = "https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "joblib", specifier = ">=1.4" },
+    { name = "networkx", specifier = ">=3.3" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pysentimiento", specifier = ">=0.7" },
     { name = "scikit-learn", specifier = ">=1.5" },

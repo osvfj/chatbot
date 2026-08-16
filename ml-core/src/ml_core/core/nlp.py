@@ -22,9 +22,3 @@ def tokenize(text, remove_stopwords=True):
     if remove_stopwords:
         tokens = [t for t in tokens if t not in STOPWORDS and len(t) > 1]
     return tokens
-
-
-def token_overlap(a, b):
-    if not a and not b:
-        return 0.0
-    return len(a & b) / len(a | b)
