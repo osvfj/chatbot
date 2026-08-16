@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS mensaje (
   contenido TEXT NOT NULL,
   sentimiento TEXT,
   intencion TEXT,
+  foto_id TEXT,
   creado_en TEXT NOT NULL
 );
 

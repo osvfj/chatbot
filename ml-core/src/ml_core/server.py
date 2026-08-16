@@ -2,18 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from .core.classifiers import ClassifierBundle
-from .core.rl import QLearner
-from .core.rules import RuleEngine
-from .core.search import KnowledgeGraph
 from .core.sentiment import analyze as analyze_sentiment
 from .db import init_db
-from .routes import albums, auth, chats
-
-bundle = ClassifierBundle()
-knowledge = KnowledgeGraph()
-rules = RuleEngine()
-learner = QLearner()
+from .routes import albums, auth, chat, chats
+from .services import bundle, knowledge, learner, rules
 
 
 @asynccontextmanager
@@ -27,6 +19,7 @@ app = FastAPI(title="ml-core", version="0.1.0", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(chats.router)
 app.include_router(albums.router)
+app.include_router(chat.router)
 
 ALGORITHMS = ("bfs", "dfs", "astar")
 

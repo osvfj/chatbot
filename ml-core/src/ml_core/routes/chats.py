@@ -54,7 +54,7 @@ def list_messages(chat_id: str, auth=Depends(require_user)):
     _get_chat(chat_id, auth["finca"])
     conn = connect()
     rows = conn.execute(
-        "SELECT id, rol, contenido, sentimiento, intencion, creado_en "
+        "SELECT id, rol, contenido, sentimiento, intencion, foto_id, creado_en "
         "FROM mensaje WHERE chat_id = ? ORDER BY creado_en ASC",
         (chat_id,),
     ).fetchall()
@@ -78,11 +78,12 @@ def add_message(chat_id: str, body: dict, auth=Depends(require_user)):
     mensaje_id = str(uuid4())
     sentimiento = _opt_str(body.get("sentimiento"))
     intencion = _opt_str(body.get("intencion"))
+    foto_id = _opt_str(body.get("foto_id"))
     conn = connect()
     conn.execute(
-        "INSERT INTO mensaje (id, chat_id, finca_id, rol, contenido, sentimiento, intencion, creado_en) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (mensaje_id, chat_id, auth["finca"], rol, contenido, sentimiento, intencion, now_iso()),
+        "INSERT INTO mensaje (id, chat_id, finca_id, rol, contenido, sentimiento, intencion, foto_id, creado_en) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (mensaje_id, chat_id, auth["finca"], rol, contenido, sentimiento, intencion, foto_id, now_iso()),
     )
     conn.commit()
     conn.close()
@@ -93,4 +94,5 @@ def add_message(chat_id: str, body: dict, auth=Depends(require_user)):
         "contenido": contenido,
         "sentimiento": sentimiento,
         "intencion": intencion,
+        "foto_id": foto_id,
     }

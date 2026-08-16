@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = Path(__file__).resolve().parent / "data"
 DB_PATH = DATA_DIR / "cafebot.db"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
