@@ -25,6 +25,10 @@ def _evaluate(condition: dict[str, Any], facts: dict[str, Any]) -> bool:
 
     fact = facts.get(condition["fact"])
 
+    comparison_ops = ("equals", "ne", "gt", "gte", "lt", "lte")
+    if condition["fact"] not in facts and any(op in condition for op in comparison_ops):
+        return False
+
     if "is_true" in condition:
         return bool(fact) is bool(condition["is_true"])
     if "is_false" in condition:
