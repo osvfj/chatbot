@@ -165,3 +165,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown pre code {
+  background: transparent;
+  padding: 0;
+}

@@ -26,16 +26,20 @@ import {
   MessageScrollerViewport,
 } from "@cafebot/ui/components/message-scroller";
 import { welcomeMessage } from "../../lib/atoms";
+import { type PendingReply } from "../../lib/streaming";
 import { formatBytes, formatTime } from "../../lib/format";
 import { useMessages } from "../../lib/use-language";
+import { Markdown } from "./markdown";
+import { StreamingReply } from "./streaming-reply";
 import { TypingIndicator } from "./typing-indicator";
 
 interface MessageListProps {
   readonly messages: ReadonlyArray<InstanceType<typeof ChatMessage>>;
   readonly isWaiting: boolean;
+  readonly streaming?: PendingReply | null | undefined;
 }
 
-export function MessageList({ messages, isWaiting }: MessageListProps) {
+export function MessageList({ messages, isWaiting, streaming }: MessageListProps) {
   const m = useMessages();
   return (
     <MessageScrollerProvider>
@@ -81,9 +85,15 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
                           {message.content.length > 0 && (
                             <Bubble variant={isUser ? "default" : "ghost"}>
                               <BubbleContent>
-                                {message.id === welcomeMessage.id
-                                  ? m.chatWelcome()
-                                  : message.content}
+                                {isUser || message.id === welcomeMessage.id ? (
+                                  message.id === welcomeMessage.id ? (
+                                    m.chatWelcome()
+                                  ) : (
+                                    message.content
+                                  )
+                                ) : (
+                                  <Markdown text={message.content} />
+                                )}
                               </BubbleContent>
                             </Bubble>
                           )}
@@ -95,7 +105,10 @@ export function MessageList({ messages, isWaiting }: MessageListProps) {
                 </MessageScrollerItem>
               );
             })}
-            {isWaiting && (
+            {streaming !== undefined && streaming !== null && (
+              <StreamingReply key={streaming.key} />
+            )}
+            {isWaiting && (streaming === undefined || streaming === null) && (
               <MessageScrollerItem>
                 <TypingIndicator />
               </MessageScrollerItem>
