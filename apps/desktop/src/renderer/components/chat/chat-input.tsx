@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { useAtomValue } from "@effect/atom-react";
 import { Predicate } from "effect";
-import { CameraIcon, FileImageIcon, PaperclipIcon, SendIcon, XIcon } from "lucide-react";
+import {
+  CameraIcon,
+  FileImageIcon,
+  PaperclipIcon,
+  SendIcon,
+  SquareIcon,
+  XIcon,
+} from "lucide-react";
 import {
   Attachment,
   AttachmentAction,
@@ -31,9 +38,11 @@ interface ChatInputProps {
   readonly onSend: (content: string, attachments: ReadonlyArray<File>) => Promise<void>;
   readonly disabled: boolean;
   readonly analyzing: boolean;
+  readonly streaming: boolean;
+  readonly onStop: () => void;
 }
 
-export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, analyzing, streaming, onStop }: ChatInputProps) {
   const m = useMessages();
   const [value, setValue] = useState("");
   const [attachView, setAttachView] = useState<"menu" | "camera">("menu");
@@ -238,15 +247,26 @@ export function ChatInput({ onSend, disabled, analyzing }: ChatInputProps) {
             )}
           </PopoverContent>
         </Popover>
-        <Button
-          size="icon"
-          disabled={busy || (value.trim().length === 0 && pending.length === 0)}
-          onClick={() => submit(value)}
-          aria-label={m.chatSend()}
-          className="absolute right-3 bottom-3 size-10 rounded-full"
-        >
-          <SendIcon className="size-5 -translate-x-px translate-y-px" />
-        </Button>
+        {streaming ? (
+          <Button
+            size="icon"
+            onClick={onStop}
+            aria-label={m.chatStop()}
+            className="absolute right-3 bottom-3 size-10 rounded-full"
+          >
+            <SquareIcon className="size-4" />
+          </Button>
+        ) : (
+          <Button
+            size="icon"
+            disabled={busy || (value.trim().length === 0 && pending.length === 0)}
+            onClick={() => submit(value)}
+            aria-label={m.chatSend()}
+            className="absolute right-3 bottom-3 size-10 rounded-full"
+          >
+            <SendIcon className="size-5 -translate-x-px translate-y-px" />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { MessageSquarePlusIcon } from "lucide-react";
 import { Predicate } from "effect";
 import { useNavigate } from "@tanstack/react-router";
+import { DetectionResult } from "@cafebot/sdk";
 import { Button } from "@cafebot/ui/components/button";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
@@ -16,12 +17,27 @@ interface ChatViewProps {
   readonly conversationId?: string;
 }
 
+const describeDetection = (detection: DetectionResult): string =>
+  `[Análisis de imagen: ${detection.fileName} — ${detection.disease.name}, confianza ${Math.round(
+    detection.confidence * 100,
+  )}%, severidad ${detection.disease.severity}. ${detection.disease.description} Recomendación: ${
+    detection.disease.advice
+  }]`;
+
 export function ChatView({ conversationId }: ChatViewProps) {
   const m = useMessages();
   const navigate = useNavigate();
   const [, setConversationUuid] = useAtom(conversationUuidAtom);
   const [, setConversationMeta] = useAtom(conversationMetaAtom);
-  const { messages, isWaiting, appendUserMessage, sendReply, resetChat } = useChat();
+  const {
+    messages,
+    isWaiting,
+    appendUserMessage,
+    sendReply,
+    resetChat,
+    streaming,
+    clearStreaming,
+  } = useChat();
   const { isAnalyzing, analyzeFile } = useGallery();
   const busy = isWaiting || isAnalyzing;
 
@@ -78,11 +94,17 @@ export function ChatView({ conversationId }: ChatViewProps) {
     );
     appendUserMessage(trimmed, attachmentData);
     if (attachments.length > 0) {
+      const detections: Array<DetectionResult> = [];
       for (const file of attachments) {
-        await analyzeFile(file, uuid);
+        const detection = await analyzeFile(file, uuid);
+        if (Predicate.isNotUndefined(detection)) {
+          detections.push(detection);
+        }
       }
+      const context = detections.map(describeDetection).join("\n");
+      sendReply(trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), context);
     } else {
-      await sendReply(trimmed);
+      sendReply(trimmed);
     }
   };
 
@@ -113,8 +135,14 @@ export function ChatView({ conversationId }: ChatViewProps) {
           <TooltipContent>{m.tooltipNewConversation()}</TooltipContent>
         </Tooltip>
       </header>
-      <MessageList messages={messages} isWaiting={busy} />
-      <ChatInput onSend={handleSend} disabled={busy} analyzing={isAnalyzing} />
+      <MessageList messages={messages} isWaiting={busy} streaming={streaming} />
+      <ChatInput
+        onSend={handleSend}
+        disabled={busy}
+        analyzing={isAnalyzing}
+        streaming={streaming !== null}
+        onStop={clearStreaming}
+      />
     </div>
   );
 }
