@@ -15,11 +15,17 @@ export const ZEN_MODELS = [
   { id: "minimax-m3", paid: true, zen: true, go: true },
   { id: "minimax-m2.7", paid: true, zen: true, go: true },
   { id: "minimax-m2.5", paid: true, zen: true, go: true },
+  { id: "kimi-k3", paid: true, zen: true, go: true },
+  { id: "grok-4.5", paid: true, zen: true, go: true },
+  { id: "qwen3.8-max", paid: true, zen: false, go: true },
   { id: "glm-5.2", paid: true, zen: true, go: true },
   { id: "glm-5.1", paid: true, zen: true, go: true },
+  { id: "gpt-5.6-luna", paid: true, zen: true, go: true },
+  { id: "qwen3.7-plus", paid: true, zen: false, go: true },
+  { id: "hy3", paid: true, zen: false, go: true },
+  { id: "mimo-v2.5", paid: true, zen: false, go: true },
   { id: "qwen3.6-plus", paid: true, zen: true, go: true },
   { id: "qwen3.5-plus", paid: true, zen: true, go: true },
-  { id: "kimi-k3", paid: true, zen: true, go: true },
 ] as const;
 
 const readStored = (key: string): string => {
