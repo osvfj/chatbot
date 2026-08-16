@@ -27,8 +27,10 @@ export function useUploadPhoto() {
   return useMutation({
     mutationFn: (input: { readonly chatId: string; readonly file: File }) =>
       api.uploadPhoto(input.chatId, input.file),
-    onSuccess: () => {
+    onSuccess: (foto) => {
+      console.info("[ml-core] Detección de visión", foto);
       void queryClient.invalidateQueries({ queryKey: ["albums"] });
+      void queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
   });
 }

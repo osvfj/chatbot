@@ -66,38 +66,40 @@ def _historia(chat_id):
 def _contexto_deteccion(foto):
     if foto is None or not foto["disease_id"]:
         return None
-    return json.dumps(
-        {
-            "archivo": foto["nombre_archivo"],
-            "enfermedad": foto["disease_name"],
-            "id_enfermedad": foto["disease_id"],
-            "confianza": foto["confidence"],
-            "severidad": foto["severity"],
-            "recomendacion": foto["advice"],
-        },
-        ensure_ascii=False,
-    )
+    return {
+        "archivo": foto["nombre_archivo"],
+        "enfermedad": foto["disease_name"],
+        "id_enfermedad": foto["disease_id"],
+        "descripcion": foto["description"],
+        "confianza": foto["confidence"],
+        "severidad": foto["severity"],
+        "recomendacion": foto["advice"],
+    }
 
 
-def _mensaje_usuario(content, foto):
+def _contexto_consulta(content, foto):
     bloques = [content]
     deteccion = _contexto_deteccion(foto)
     if deteccion:
-        bloques.append("[Análisis de imagen]\n" + deteccion)
+        bloques.append("[Análisis de imagen]\n" + json.dumps(deteccion, ensure_ascii=False))
     prediccion = bundle.predict(content)
     sentimiento = analyze_sentiment(content)
     bloques.append(
         "[Clasificación de la consulta]\n"
         + json.dumps(
             {
-                "intencion": prediccion["ensemble"],
-                "confianza": prediccion["mlp"]["confidence"],
-                "sentimiento": sentimiento["label"],
+                "intencion": prediccion,
+                "sentimiento": sentimiento,
             },
             ensure_ascii=False,
         )
     )
-    return {"role": "user", "content": "\n\n".join(bloques)}
+    return {
+        "prompt": "\n\n".join(bloques),
+        "detection": deteccion,
+        "intent": prediccion,
+        "sentiment": sentimiento,
+    }
 
 
 def _persistir(chat_id, finca_id, rol, contenido, foto_id=None, sentimiento=None, intencion=None):
@@ -154,11 +156,21 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     historia = _historia(chat_id)
     if historia and historia[-1]["role"] == "user":
         historia = historia[:-1]
+    contexto = _contexto_consulta(content, foto)
     mensajes = [{"role": "system", "content": SYSTEM_PROMPT}]
     mensajes += historia
-    mensajes.append(_mensaje_usuario(content, foto))
+    mensajes.append({"role": "user", "content": contexto["prompt"]})
 
     def generar():
+        yield "event: context\n"
+        yield "data: " + json.dumps(
+            {
+                "detection": contexto["detection"],
+                "intent": contexto["intent"],
+                "sentiment": contexto["sentiment"],
+            },
+            ensure_ascii=False,
+        ) + "\n\n"
         if MOCK:
             stream = _stream_mock()
         else:

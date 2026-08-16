@@ -8,6 +8,7 @@ export interface ChatStreamOptions {
   readonly apiKey: string;
   readonly model: string;
   readonly endpoint: string;
+  readonly onContext: (context: object) => void;
   readonly onDelta: (text: string) => void;
   readonly onDone: (fullText: string) => void;
   readonly onError: (message: string) => void;
@@ -42,6 +43,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
   const reader = res.body.getReader();
   let buffer = "";
   let full = "";
+  let eventName = "";
 
   try {
     while (true) {
@@ -55,17 +57,27 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + 1);
         const trimmed = line.trim();
+        if (trimmed.startsWith("event:")) {
+          eventName = trimmed.slice(6).trim();
+          continue;
+        }
         if (!trimmed.startsWith("data:")) {
           continue;
         }
         const data = trimmed.slice(5).trim();
         if (data === "[DONE]") {
+          eventName = "";
           continue;
         }
         const payload = JSON.parse(data) as {
           readonly error?: { readonly message?: string };
           readonly choices?: ReadonlyArray<{ readonly delta?: { readonly content?: string } }>;
         };
+        if (eventName === "context") {
+          options.onContext(payload);
+          eventName = "";
+          continue;
+        }
         if (payload.error !== undefined) {
           throw new Error(payload.error.message ?? "Error del LLM");
         }

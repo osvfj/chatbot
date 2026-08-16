@@ -39,6 +39,9 @@ export function ChatStreamer() {
       model,
       endpoint: zenEndpoint(account),
       signal: controller.signal,
+      onContext: (context) => {
+        console.info("[ml-core] Contexto crudo enviado al LLM", context);
+      },
       onDelta: (text) => setStreamText(text),
       onDone: (text) => {
         if (text.length > 0) {
