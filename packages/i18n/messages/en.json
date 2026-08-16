@@ -53,5 +53,17 @@
   "settingsZenAccountZen": "OpenCode Zen (pay-per-use)",
   "settingsZenAccountGo": "OpenCode Go (subscription)",
   "settingsSave": "Save",
-  "settingsSaved": "Settings saved"
+  "settingsSaved": "Settings saved",
+  "authWelcomeTitle": "Welcome to Cafebot",
+  "authWelcomeSubtitle": "Sign in or create a farm to get started",
+  "authLoginTab": "Sign in",
+  "authRegisterTab": "Create farm",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authFinca": "Farm name",
+  "authRegion": "Region",
+  "authName": "Your name",
+  "authLogin": "Sign in",
+  "authRegister": "Create farm",
+  "authError": "Could not authenticate. Check your details or that the backend is running."
 }

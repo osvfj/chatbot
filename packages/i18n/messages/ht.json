@@ -53,5 +53,17 @@
   "settingsZenAccountZen": "OpenCode Zen (pay-per-use)",
   "settingsZenAccountGo": "OpenCode Go (abònman)",
   "settingsSave": "Anrejistre",
-  "settingsSaved": "Anviwònman anrejistre"
+  "settingsSaved": "Anviwònman anrejistre",
+  "authWelcomeTitle": "Byenvini nan Cafebot",
+  "authWelcomeSubtitle": "Konekte oswa kreye yon fin pou kòmanse",
+  "authLoginTab": "Konekte",
+  "authRegisterTab": "Kreye fin",
+  "authEmail": "Imèl",
+  "authPassword": "Modpas",
+  "authFinca": "Non fin an",
+  "authRegion": "Rejyon",
+  "authName": "Non ou",
+  "authLogin": "Konekte",
+  "authRegister": "Kreye fin",
+  "authError": "Pa t kapab verifye idantite w. Tcheke enfòmasyon ou oswa si backend la ap kouri."
 }

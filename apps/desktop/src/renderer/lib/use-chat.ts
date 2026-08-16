@@ -34,13 +34,13 @@ export function useChat() {
   );
 
   const sendReply = useCallback(
-    (content: string, context = ""): void => {
+    (chatId: string, content: string, context = ""): void => {
       const trimmed = content.trim();
       if (trimmed.length === 0) {
         return;
       }
       setSuggestions([]);
-      setStreaming({ content: trimmed, context, key: crypto.randomUUID() });
+      setStreaming({ chatId, content: trimmed, context, key: crypto.randomUUID() });
     },
     [setSuggestions, setStreaming],
   );
@@ -50,13 +50,13 @@ export function useChat() {
   }, [setStreaming]);
 
   const sendMessage = useCallback(
-    (content: string): void => {
+    (chatId: string, content: string): void => {
       const trimmed = content.trim();
       if (trimmed.length === 0) {
         return;
       }
       appendUserMessage(trimmed);
-      sendReply(trimmed);
+      sendReply(chatId, trimmed);
     },
     [appendUserMessage, sendReply],
   );

@@ -4,6 +4,7 @@ import * as m from "@cafebot/i18n";
 import { ChatMessage, DetectionResult } from "@cafebot/sdk";
 import { Api } from "../services/api";
 import { getStoredTheme, prefersDarkColorScheme } from "./theme";
+import type { Session } from "./backend";
 
 export interface DetectionCard {
   readonly detection: InstanceType<typeof DetectionResult>;
@@ -25,6 +26,8 @@ export const welcomeMessage = new ChatMessage({
 });
 
 export const conversationUuidAtom = Atom.make<string | null>(null).pipe(Atom.keepAlive);
+
+export const sessionAtom = Atom.make<Session | null>(null).pipe(Atom.keepAlive);
 
 export const conversationMetaAtom = Atom.make<ReadonlyMap<string, ConversationMeta>>(
   new Map(),

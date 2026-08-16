@@ -53,5 +53,17 @@
   "settingsZenAccountZen": "OpenCode Zen (pay-per-use)",
   "settingsZenAccountGo": "OpenCode Go (suscripción)",
   "settingsSave": "Guardar",
-  "settingsSaved": "Configuración guardada"
+  "settingsSaved": "Configuración guardada",
+  "authWelcomeTitle": "Bienvenido a Cafebot",
+  "authWelcomeSubtitle": "Inicia sesión o crea una finca para comenzar",
+  "authLoginTab": "Iniciar sesión",
+  "authRegisterTab": "Crear finca",
+  "authEmail": "Correo",
+  "authPassword": "Contraseña",
+  "authFinca": "Nombre de la finca",
+  "authRegion": "Región",
+  "authName": "Tu nombre",
+  "authLogin": "Entrar",
+  "authRegister": "Registrar finca",
+  "authError": "No se pudo autenticar. Revisa tus datos o que el backend esté corriendo."
 }

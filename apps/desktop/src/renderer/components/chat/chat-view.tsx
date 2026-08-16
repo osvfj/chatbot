@@ -1,28 +1,24 @@
+import { useEffect } from "react";
 import { MessageSquarePlusIcon } from "lucide-react";
-import { Predicate } from "effect";
+import { DateTime, Predicate } from "effect";
 import { useNavigate } from "@tanstack/react-router";
-import { DetectionResult } from "@cafebot/sdk";
+import { useQuery } from "@tanstack/react-query";
+import { useAtom } from "@effect/atom-react";
+import { ChatMessage, DetectionResult } from "@cafebot/sdk";
 import { Button } from "@cafebot/ui/components/button";
 import { SidebarTrigger } from "@cafebot/ui/components/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@cafebot/ui/components/tooltip";
 import { useChat } from "../../lib/use-chat";
 import { useGallery } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
-import { conversationMetaAtom, conversationUuidAtom } from "../../lib/atoms";
-import { useAtom } from "@effect/atom-react";
+import { conversationMetaAtom, conversationUuidAtom, messagesAtom } from "../../lib/atoms";
+import { api } from "../../lib/backend";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
 
 interface ChatViewProps {
   readonly conversationId?: string;
 }
-
-const describeDetection = (detection: DetectionResult): string =>
-  `[Análisis de imagen: ${detection.fileName} — ${detection.disease.name}, confianza ${Math.round(
-    detection.confidence * 100,
-  )}%, severidad ${detection.disease.severity}. ${detection.disease.description} Recomendación: ${
-    detection.disease.advice
-  }]`;
 
 export function ChatView({ conversationId }: ChatViewProps) {
   const m = useMessages();
@@ -39,21 +35,45 @@ export function ChatView({ conversationId }: ChatViewProps) {
     clearStreaming,
   } = useChat();
   const { isAnalyzing, analyzeFile } = useGallery();
+  const [, setMessages] = useAtom(messagesAtom);
   const busy = isWaiting || isAnalyzing;
 
-  const ensureConversation = (title: string): string => {
-    if (Predicate.isUndefined(conversationId)) {
-      const uuid = crypto.randomUUID();
-      setConversationUuid(uuid);
-      setConversationMeta((current) => {
-        const next = new Map(current);
-        next.set(uuid, { title, createdAt: Date.now() });
-        return next;
-      });
-      navigate({ to: "/chat/$uuid", params: { uuid } });
-      return uuid;
+  const history = useQuery({
+    queryKey: ["messages", conversationId ?? "none"],
+    queryFn: () => api.listMessages(conversationId ?? ""),
+    enabled: conversationId !== undefined,
+  });
+
+  useEffect(() => {
+    if (conversationId === undefined || history.data === undefined) {
+      return;
     }
-    return conversationId;
+    setMessages(
+      history.data.messages.map(
+        (message) =>
+          new ChatMessage({
+            id: message.id,
+            role: message.rol,
+            content: message.contenido,
+            sentAt: DateTime.fromDateUnsafe(new Date(message.creado_en)),
+          }),
+      ),
+    );
+  }, [history.data, conversationId, setMessages]);
+
+  const ensureChat = async (title: string): Promise<string> => {
+    if (conversationId !== undefined) {
+      return conversationId;
+    }
+    const chat = await api.createChat(title);
+    setConversationUuid(chat.id);
+    setConversationMeta((current) => {
+      const next = new Map(current);
+      next.set(chat.id, { title, createdAt: Date.now() });
+      return next;
+    });
+    navigate({ to: "/chat/$uuid", params: { uuid: chat.id } });
+    return chat.id;
   };
 
   const handleNewConversation = (): void => {
@@ -82,7 +102,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
       return;
     }
     const first = attachments[0];
-    const uuid = ensureConversation(
+    const chatId = await ensureChat(
       trimmed.length > 0 ? trimmed : Predicate.isNotUndefined(first) ? first.name : "📷",
     );
     const attachmentData = await Promise.all(
@@ -96,15 +116,15 @@ export function ChatView({ conversationId }: ChatViewProps) {
     if (attachments.length > 0) {
       const detections: Array<DetectionResult> = [];
       for (const file of attachments) {
-        const detection = await analyzeFile(file, uuid);
+        const detection = await analyzeFile(file, chatId);
         if (Predicate.isNotUndefined(detection)) {
           detections.push(detection);
         }
       }
       const context = detections.map(describeDetection).join("\n");
-      sendReply(trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), context);
+      sendReply(chatId, trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), context);
     } else {
-      sendReply(trimmed);
+      sendReply(chatId, trimmed);
     }
   };
 
@@ -146,3 +166,10 @@ export function ChatView({ conversationId }: ChatViewProps) {
     </div>
   );
 }
+
+const describeDetection = (detection: DetectionResult): string =>
+  `[Análisis de imagen: ${detection.fileName} — ${detection.disease.name}, confianza ${Math.round(
+    detection.confidence * 100,
+  )}%, severidad ${detection.disease.severity}. ${detection.disease.description} Recomendación: ${
+    detection.disease.advice
+  }]`;

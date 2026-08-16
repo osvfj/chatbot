@@ -1,5 +1,4 @@
 import { useAtomValue } from "@effect/atom-react";
-import { AsyncResult } from "effect/unstable/reactivity";
 import { CoffeeIcon } from "lucide-react";
 import { Bubble, BubbleContent, BubbleGroup } from "@cafebot/ui/components/bubble";
 import {
@@ -9,15 +8,12 @@ import {
   MessageGroup,
 } from "@cafebot/ui/components/message";
 import { MessageScrollerItem } from "@cafebot/ui/components/message-scroller";
-import { streamingResultAtom } from "../../lib/streaming";
+import { streamTextAtom } from "../../lib/streaming";
 import { Markdown } from "./markdown";
 import { TypingIndicator } from "./typing-indicator";
 
 export function StreamingReply() {
-  const result = useAtomValue(streamingResultAtom);
-  const text = AsyncResult.isSuccess(result)
-    ? result.value.items.map((item) => item.delta).join("")
-    : "";
+  const text = useAtomValue(streamTextAtom);
 
   return (
     <MessageScrollerItem>
