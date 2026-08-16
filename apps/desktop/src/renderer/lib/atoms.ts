@@ -44,6 +44,4 @@ export const darkModeAtom = Atom.make(
   Predicate.isNull(storedTheme) ? prefersDarkColorScheme() : storedTheme,
 ).pipe(Atom.keepAlive);
 
-export const sendMessageFn = Api.mutation("SendMessage").pipe(Atom.keepAlive);
-
 export const analyzeImageFn = Api.mutation("AnalyzeImage").pipe(Atom.keepAlive);

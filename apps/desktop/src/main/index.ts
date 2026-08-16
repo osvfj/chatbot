@@ -9,7 +9,12 @@ import { analyzeImage } from "./services/vision";
 
 const HandlersLive = AllRpcs.toLayer(
   Effect.sync(() => ({
-    SendMessage: (payload: { readonly content: string }) => sendMessage(payload.content),
+    SendMessage: (payload) =>
+      sendMessage(payload.content, {
+        ...(payload.apiKey === undefined ? {} : { apiKey: payload.apiKey }),
+        ...(payload.model === undefined ? {} : { model: payload.model }),
+        ...(payload.endpoint === undefined ? {} : { endpoint: payload.endpoint }),
+      }),
     AnalyzeImage: (payload: { readonly fileName: string; readonly data: Uint8Array }) =>
       analyzeImage(payload.fileName, payload.data),
   })),

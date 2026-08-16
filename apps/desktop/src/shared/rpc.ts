@@ -1,12 +1,18 @@
 import { Schema } from "effect";
 import { Rpc, RpcGroup } from "effect/unstable/rpc";
-import { ChatReply, DetectionResult, RpcError } from "@cafebot/sdk";
+import { ChatDelta, DetectionResult, RpcError } from "@cafebot/sdk";
 
 export class ChatRpcs extends RpcGroup.make(
   Rpc.make("SendMessage", {
-    payload: Schema.Struct({ content: Schema.NonEmptyString }),
-    success: ChatReply,
+    payload: Schema.Struct({
+      content: Schema.NonEmptyString,
+      apiKey: Schema.optional(Schema.NonEmptyString),
+      model: Schema.optional(Schema.NonEmptyString),
+      endpoint: Schema.optional(Schema.NonEmptyString),
+    }),
+    success: ChatDelta,
     error: RpcError,
+    stream: true,
   }),
 ) {}
 
