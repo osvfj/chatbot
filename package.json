@@ -14,7 +14,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "clean": "pnpm -r clean",
-    "ml:dev": "cd ml-core && uv sync && uv run python -m ml_core.server"
+    "ml:dev": "cd ml-core && uv sync && uv run uvicorn ml_core.server:app --host 127.0.0.1 --port 8765 --reload"
   },
   "devDependencies": {
     "@effect/language-service": "0.87.2",

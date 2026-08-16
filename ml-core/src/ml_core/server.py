@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .core.sentiment import analyze as analyze_sentiment
+from .core.sentiment import warmup as warmup_sentiment
 from .db import init_db
 from .routes import albums, auth, chat, chats
 from .services import bundle, knowledge, learner, rules
@@ -14,6 +15,7 @@ from .vision import detector
 async def lifespan(_app):
     init_db()
     bundle.train()
+    warmup_sentiment()
     yield
 
 

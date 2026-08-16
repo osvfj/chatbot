@@ -5,7 +5,7 @@ import bcrypt
 import jwt
 from fastapi import Header, HTTPException
 
-SECRET = os.environ.get("ML_CORE_SECRET", "dev-secret-cambiar")
+SECRET = os.environ.get("ML_CORE_SECRET", "cafebot-development-secret-change-me-32")
 ALGORITHM = "HS256"
 
 

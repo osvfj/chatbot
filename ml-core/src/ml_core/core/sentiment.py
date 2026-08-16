@@ -18,3 +18,8 @@ def analyze(text):
     probas = {_LABELS.get(k, k): round(float(v), 4) for k, v in result.probas.items()}
     confidence = round(float(result.probas.get(result.output, 0.0)), 4)
     return {"label": label, "probas": probas, "confidence": confidence}
+
+
+def warmup():
+    """Load the Spanish model during startup instead of the first user request."""
+    _get_analyzer()
