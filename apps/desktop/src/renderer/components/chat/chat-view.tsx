@@ -12,6 +12,7 @@ import { useChat } from "../../lib/use-chat";
 import { useUploadPhoto } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
 import { conversationMetaAtom, conversationUuidAtom, messagesAtom } from "../../lib/atoms";
+import { dialogueQuestionAtom } from "../../lib/streaming";
 import { api } from "../../lib/backend";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
@@ -36,6 +37,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   } = useChat();
   const uploadPhoto = useUploadPhoto();
   const [, setMessages] = useAtom(messagesAtom);
+  const [dialogueQuestion, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
   const busy = isWaiting || uploadPhoto.isPending;
 
   const history = useQuery({
@@ -125,6 +127,17 @@ export function ChatView({ conversationId }: ChatViewProps) {
     }
   };
 
+  const handleDialogueAnswer = (answer: {
+    readonly optionId?: string;
+    readonly freeText: string;
+    readonly label: string;
+  }): void => {
+    if (conversationId === undefined) return;
+    appendUserMessage(answer.label);
+    setDialogueQuestion(null);
+    sendReply(conversationId, answer.label, undefined, answer.optionId, answer.freeText);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -152,7 +165,13 @@ export function ChatView({ conversationId }: ChatViewProps) {
           <TooltipContent>{m.tooltipNewConversation()}</TooltipContent>
         </Tooltip>
       </header>
-      <MessageList messages={messages} isWaiting={busy} streaming={streaming} />
+      <MessageList
+        messages={messages}
+        isWaiting={busy}
+        streaming={streaming}
+        dialogueQuestion={dialogueQuestion}
+        onDialogueAnswer={handleDialogueAnswer}
+      />
       <ChatInput
         onSend={handleSend}
         disabled={busy}

@@ -1,15 +1,21 @@
 import json
 import os
 from uuid import uuid4
+from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from ..core.sentiment import analyze as analyze_sentiment
+from ..core.dialogue import question as dialogue_question, update as update_dialogue
 from ..db import connect
 from ..security import now_iso, require_user
 from ..services import bundle
+
+CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
+VISION_IDS = {"HEALTHY": "healthy", "RUST": "leaf-rust", "RED_SPIDER_MITE": "red-spider-mite"}
+CATALOG = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
 
 router = APIRouter()
 
@@ -108,6 +114,55 @@ def _contexto_consulta(content, foto):
     }
 
 
+def _pregunta_diagnostico(foto):
+    if foto is None or not foto["disease_id"]:
+        return None
+    return dialogue_question()
+
+
+def _get_dialogue_state(chat_id, finca_id):
+    conn = connect()
+    row = conn.execute("SELECT * FROM dialogo_estado WHERE chat_id = ? AND finca_id = ?", (chat_id, finca_id)).fetchone()
+    conn.close()
+    return row
+
+
+def _save_dialogue_state(chat_id, finca_id, foto_id, question_id, number, hypotheses, evidence):
+    conn = connect()
+    conn.execute(
+        "INSERT INTO dialogo_estado (chat_id, finca_id, foto_id, pregunta_id, pregunta_numero, hipotesis, evidencia, actualizado_en) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chat_id) DO UPDATE SET foto_id=excluded.foto_id, pregunta_id=excluded.pregunta_id, pregunta_numero=excluded.pregunta_numero, hipotesis=excluded.hipotesis, evidencia=excluded.evidencia, actualizado_en=excluded.actualizado_en",
+        (chat_id, finca_id, foto_id, question_id, number, json.dumps(hypotheses), json.dumps(evidence), now_iso()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _clear_dialogue_state(chat_id):
+    conn = connect()
+    conn.execute("DELETE FROM dialogo_estado WHERE chat_id = ?", (chat_id,))
+    conn.commit()
+    conn.close()
+
+
+def _update_final_photo(foto_id, decision):
+    disease_id = VISION_IDS.get(decision["top_hypothesis"])
+    if disease_id is None:
+        return
+    info = CATALOG.get(disease_id, {})
+    top_predictions = [
+        {"disease_id": VISION_IDS.get(key, key.lower()), "confidence": value}
+        for key, value in sorted(decision["hypotheses"].items(), key=lambda item: -item[1])
+    ]
+    conn = connect()
+    conn.execute(
+        "UPDATE foto SET disease_id=?, disease_name=?, description=?, confidence=?, severity=?, advice=?, detector_status=?, top_predictions=? WHERE id=?",
+        (disease_id, info.get("name", disease_id), info.get("description", ""), decision["confidence"], info.get("severity", ""), info.get("advice", ""), "confirmed_dialogue", json.dumps(top_predictions, ensure_ascii=False), foto_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def _persistir(chat_id, finca_id, rol, contenido, foto_id=None, sentimiento=None, intencion=None):
     mensaje_id = str(uuid4())
     conn = connect()
@@ -157,12 +212,40 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     endpoint = str(body.get("endpoint") or DEFAULT_ENDPOINT)
 
     foto = _get_foto(foto_id, auth["finca"]) if foto_id else None
+    dialogue_state = _get_dialogue_state(chat_id, auth["finca"])
     _persistir(chat_id, auth["finca"], "user", content, foto_id=foto_id)
 
     historia = _historia(chat_id)
     if historia and historia[-1]["role"] == "user":
         historia = historia[:-1]
     contexto = _contexto_consulta(content, foto)
+    pregunta = _pregunta_diagnostico(foto) if dialogue_state is None else None
+    decision = None
+    if dialogue_state is not None:
+        try:
+            hypotheses = json.loads(dialogue_state["hipotesis"])
+            evidence = json.loads(dialogue_state["evidencia"])
+        except (TypeError, json.JSONDecodeError):
+            hypotheses, evidence = {}, []
+        answer_id = str(body.get("answer_id") or "")
+        free_text = str(body.get("free_text") or content)
+        probabilities, top, confidence = update_dialogue(hypotheses, answer_id, free_text)
+        evidence.append({"option": answer_id, "text": free_text})
+        next_number = int(dialogue_state["pregunta_numero"]) + 1
+        if confidence < 0.75 and next_number <= 3:
+            _save_dialogue_state(chat_id, auth["finca"], dialogue_state["foto_id"], "visual_symptom_confirmation", next_number, probabilities, evidence)
+            pregunta = dialogue_question(number=next_number)
+        else:
+            _clear_dialogue_state(chat_id)
+            decision = {"hypotheses": probabilities, "top_hypothesis": top, "confidence": confidence, "evidence": evidence}
+            _update_final_photo(dialogue_state["foto_id"], decision)
+            contexto["prompt"] += "\n\n[Decisión bayesiana]\n" + json.dumps(decision, ensure_ascii=False)
+    elif pregunta is not None:
+        initial = contexto["detection"] or {}
+        initial_hypotheses = {item["disease_id"]: float(item["confidence"] or 0.0) for item in initial.get("top_predictions", []) if item.get("disease_id")}
+        if not initial_hypotheses and initial.get("id_enfermedad"):
+            initial_hypotheses = {initial["id_enfermedad"]: float(initial.get("confianza") or 0.0)}
+        _save_dialogue_state(chat_id, auth["finca"], foto_id, pregunta["id"], 1, initial_hypotheses, [])
     mensajes = [{"role": "system", "content": SYSTEM_PROMPT}]
     mensajes += historia
     mensajes.append({"role": "user", "content": contexto["prompt"]})
@@ -174,9 +257,13 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
                 "detection": contexto["detection"],
                 "intent": contexto["intent"],
                 "sentiment": contexto["sentiment"],
+                "question": pregunta,
+                "decision": decision,
             },
             ensure_ascii=False,
         ) + "\n\n"
+        if pregunta is not None:
+            return
         if MOCK:
             stream = _stream_mock()
         else:

@@ -1,0 +1,24 @@
+{
+  "visual_symptom_confirmation": [
+    {
+      "id": "orange_powder",
+      "label": "Polvo anaranjado o amarillo",
+      "evidence": {"RUST": 3.0, "RED_SPIDER_MITE": 0.2, "HEALTHY": -1.0}
+    },
+    {
+      "id": "webbing",
+      "label": "Telarañas o puntos pequeños",
+      "evidence": {"RUST": 0.1, "RED_SPIDER_MITE": 3.0, "HEALTHY": -1.0}
+    },
+    {
+      "id": "spots",
+      "label": "Manchas sin polvo visible",
+      "evidence": {"RUST": 1.0, "RED_SPIDER_MITE": 0.8, "HEALTHY": -0.4}
+    },
+    {
+      "id": "none",
+      "label": "No observo ninguno de esos signos",
+      "evidence": {"RUST": -1.0, "RED_SPIDER_MITE": -1.0, "HEALTHY": 1.5}
+    }
+  ]
+}

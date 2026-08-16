@@ -63,3 +63,14 @@ CREATE TABLE IF NOT EXISTS foto (
   top_predictions TEXT,
   creado_en TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS dialogo_estado (
+  chat_id TEXT PRIMARY KEY REFERENCES chat(id),
+  finca_id TEXT NOT NULL REFERENCES finca(id),
+  foto_id TEXT REFERENCES foto(id),
+  pregunta_id TEXT NOT NULL,
+  pregunta_numero INTEGER NOT NULL DEFAULT 1,
+  hipotesis TEXT NOT NULL,
+  evidencia TEXT NOT NULL DEFAULT '[]',
+  actualizado_en TEXT NOT NULL
+);

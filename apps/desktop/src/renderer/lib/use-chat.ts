@@ -34,7 +34,13 @@ export function useChat() {
   );
 
   const sendReply = useCallback(
-    (chatId: string, content: string, fotoId?: string | undefined): void => {
+    (
+      chatId: string,
+      content: string,
+      fotoId?: string | undefined,
+      answerId?: string,
+      freeText?: string,
+    ): void => {
       const trimmed = content.trim();
       if (trimmed.length === 0) {
         return;
@@ -44,6 +50,8 @@ export function useChat() {
         chatId,
         content: trimmed,
         ...(fotoId === undefined ? {} : { fotoId }),
+        ...(answerId === undefined ? {} : { answerId }),
+        ...(freeText === undefined ? {} : { freeText }),
         key: crypto.randomUUID(),
       });
     },

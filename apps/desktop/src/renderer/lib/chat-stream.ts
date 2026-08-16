@@ -1,14 +1,21 @@
 import { Predicate } from "effect";
 import { BACKEND_URL, getToken } from "./backend";
+import type { DialogueQuestion } from "./streaming";
+
+export interface ChatContext {
+  readonly question: DialogueQuestion | null;
+}
 
 export interface ChatStreamOptions {
   readonly chatId: string;
   readonly content: string;
   readonly fotoId?: string | undefined;
+  readonly answerId?: string | undefined;
+  readonly freeText?: string | undefined;
   readonly apiKey: string;
   readonly model: string;
   readonly endpoint: string;
-  readonly onContext: (context: object) => void;
+  readonly onContext: (context: ChatContext) => void;
   readonly onDelta: (text: string) => void;
   readonly onDone: (fullText: string) => void;
   readonly onError: (message: string) => void;
@@ -26,6 +33,8 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
     body: JSON.stringify({
       content: options.content,
       ...(options.fotoId === undefined ? {} : { foto_id: options.fotoId }),
+      ...(options.answerId === undefined ? {} : { answer_id: options.answerId }),
+      ...(options.freeText === undefined ? {} : { free_text: options.freeText }),
       apiKey: options.apiKey,
       model: options.model,
       endpoint: options.endpoint,
@@ -72,9 +81,15 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
         const payload = JSON.parse(data) as {
           readonly error?: { readonly message?: string };
           readonly choices?: ReadonlyArray<{ readonly delta?: { readonly content?: string } }>;
+          readonly detection?: unknown;
+          readonly intent?: unknown;
+          readonly sentiment?: unknown;
+          readonly question?: DialogueQuestion | null;
         };
         if (eventName === "context") {
-          options.onContext(payload);
+          options.onContext({
+            question: payload.question ?? null,
+          });
           eventName = "";
           continue;
         }
