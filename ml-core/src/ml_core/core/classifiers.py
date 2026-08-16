@@ -19,8 +19,6 @@ from pathlib import Path
 
 from joblib import dump, load
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -44,10 +42,11 @@ class ClassifierBundle:
         self.labels = [r["intent"] for r in records]
         self.classes = sorted(set(self.labels))
 
-        self.vectorizer = CountVectorizer(analyzer=tokenize, ngram_range=(1, 2), min_df=1)
+        self.vectorizer = CountVectorizer(analyzer=tokenize, min_df=1)
         self.tree: DecisionTreeClassifier | None = None
         self.nb: MultinomialNB | None = None
         self.mlp: MLPClassifier | None = None
+        self.feature_names: list[str] = []
 
     def _features(self, texts: list[str]):
         return self.vectorizer.fit_transform(texts)
@@ -60,8 +59,9 @@ class ClassifierBundle:
 
         X = self._features(self.texts)
         y = self.labels
+        self._rebuild_feature_names()
 
-        self.tree = DecisionTreeClassifier(max_depth=6, min_samples_leaf=1, random_state=0)
+        self.tree = DecisionTreeClassifier(max_depth=None, min_samples_leaf=1, max_features="sqrt", random_state=0)
         self.nb = MultinomialNB(alpha=1.0)
         self.mlp = MLPClassifier(hidden_layer_sizes=(24, 12), max_iter=1500, random_state=0)
 
@@ -79,6 +79,11 @@ class ClassifierBundle:
         self.tree = load(TREE_PATH)
         self.nb = load(NB_PATH)
         self.mlp = load(MLP_PATH)
+        self._rebuild_feature_names()
+
+    def _rebuild_feature_names(self) -> None:
+        inverse = {v: k for k, v in self.vectorizer.vocabulary_.items()}
+        self.feature_names = [inverse[i] for i in range(len(inverse))]
 
     @property
     def trained(self) -> bool:
@@ -86,14 +91,13 @@ class ClassifierBundle:
 
     def _tree_path(self, row) -> list[str]:
         tree = self.tree  # type: ignore[union-attr]
-        names = self.vectorizer.get_feature_names_out()
         node = 0
         path: list[str] = []
         while tree.tree_.children_left[node] != -1:
             feat = tree.tree_.feature[node]
             thr = tree.tree_.threshold[node]
-            fname = names[feat]
-            value = float(row[feat])
+            fname = self.feature_names[feat]
+            value = float(row[0, feat])
             went_left = value <= thr
             path.append(f"{fname} {'<=' if went_left else '>'} {thr:.3f} ({value:.3f})")
             node = tree.tree_.children_left[node] if went_left else tree.tree_.children_right[node]
@@ -131,23 +135,23 @@ class ClassifierBundle:
         return max(counts, key=counts.get)
 
     def metrics(self) -> list[dict]:
+        from sklearn.model_selection import cross_val_score
+
         X = self.vectorizer.fit_transform(self.texts)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, self.labels, test_size=0.25, stratify=self.labels, random_state=0
-        )
         results = []
         for name, model in (
-            ("decision_tree", DecisionTreeClassifier(max_depth=6, random_state=0)),
+            ("decision_tree", DecisionTreeClassifier(max_depth=None, min_samples_leaf=1, max_features="sqrt", random_state=0)),
             ("naive_bayes", MultinomialNB(alpha=1.0)),
             ("mlp", MLPClassifier(hidden_layer_sizes=(24, 12), max_iter=1500, random_state=0)),
         ):
-            model.fit(X_train, y_train)
-            preds = model.predict(X_test)
+            acc = cross_val_score(model, X, self.labels, cv=5, scoring="accuracy")
+            f1 = cross_val_score(model, X, self.labels, cv=5, scoring="f1_macro")
             results.append(
                 {
                     "model": name,
-                    "accuracy": round(accuracy_score(y_test, preds), 4),
-                    "f1_macro": round(f1_score(y_test, preds, average="macro"), 4),
+                    "accuracy": round(float(acc.mean()), 4),
+                    "accuracy_std": round(float(acc.std()), 4),
+                    "f1_macro": round(float(f1.mean()), 4),
                 }
             )
         return results

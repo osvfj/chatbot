@@ -29,7 +29,7 @@ class KnowledgeGraph:
         self.start = raw["start"]
         self.nodes: dict[str, dict] = raw["nodes"]
         self.keyword_sets: dict[str, set[str]] = {
-            node_id: set(tokenize(kw) for kw in node["keywords"])
+            node_id: {t for kw in node["keywords"] for t in tokenize(kw)}
             for node_id, node in self.nodes.items()
         }
         self.neighbors: dict[str, list[tuple[str, float]]] = {node_id: [] for node_id in self.nodes}
