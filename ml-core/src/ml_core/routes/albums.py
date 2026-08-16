@@ -134,7 +134,7 @@ def upload_photo(
         "severity": severity,
         "detector_status": detector_status,
         "top_predictions": json.loads(top_predictions),
-        "detector_disponible": detector.available(),
+        "detector": detector.model_info(),
     }
 
 

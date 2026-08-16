@@ -36,6 +36,17 @@ def available():
     return MODEL_PATH.exists()
 
 
+def model_info():
+    model = _get_model()
+    if model is None:
+        return {"available": False, "classes": [], "min_confidence": MIN_CONFIDENCE}
+    return {
+        "available": True,
+        "classes": [LABEL_MAP.get(label, label.lower()) for label in model.classes_],
+        "min_confidence": MIN_CONFIDENCE,
+    }
+
+
 def detect(bytes_data):
     model = _get_model()
     if model is None:

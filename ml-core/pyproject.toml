@@ -6,7 +6,7 @@ requires-python = ">=3.11,<3.14"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn>=0.30",
-  "scikit-learn>=1.5",
+  "scikit-learn==1.6.1",
   "numpy>=1.26",
   "joblib>=1.4",
   "spacy>=3.7",

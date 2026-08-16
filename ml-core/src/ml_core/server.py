@@ -7,6 +7,7 @@ from .core.sentiment import analyze as analyze_sentiment
 from .db import init_db
 from .routes import albums, auth, chat, chats
 from .services import bundle, knowledge, learner, rules
+from .vision import detector
 
 
 @asynccontextmanager
@@ -34,7 +35,7 @@ ALGORITHMS = ("bfs", "dfs", "astar")
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "trained": bundle.trained}
+    return {"status": "ok", "trained": bundle.trained, "vision": detector.model_info()}
 
 
 @app.post("/intent")

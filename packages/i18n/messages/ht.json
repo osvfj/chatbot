@@ -19,7 +19,7 @@
   "chatCameraError": "Pa t kapab aksede kamera a",
   "chatCapture": "Kaptire",
   "chatBack": "Retounen",
-  "chatWelcome": "Bonjou! Se mwen Cafebot, asistan ou pou deteksyon vizyèl maladi pye kafe. Voye yon foto yon fèy epi m ap analize l pou wouy, cercospora, phoma, minè oswa acariens wouj. Mwen ka reponn kesyon sou jesyon plantasyon kafe tou.",
+  "chatWelcome": "Bonjou! Se mwen Cafebot, asistan ou pou analiz vizyèl pye kafe. Voye yon foto yon fèy epi m ap klase l kòm fèy an sante, wouy oswa acariens wouj. Mwen ka reponn kesyon sou jesyon plantasyon kafe tou.",
   "chatPhotoPrompt": "Analize imaj la tache.",
   "galleryHeader": "Galeri",
   "gallerySubtitle": "Foto analize · {count}",

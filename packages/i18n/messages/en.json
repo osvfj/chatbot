@@ -19,7 +19,7 @@
   "chatCameraError": "Could not access the camera",
   "chatCapture": "Capture",
   "chatBack": "Back",
-  "chatWelcome": "Hi! I'm Cafebot, your assistant for visual coffee plant disease detection. Upload a leaf photo and I'll analyze it for rust, cercospora, phoma, leaf miner or red spider mite. I can also answer questions about coffee farm management.",
+  "chatWelcome": "Hi! I'm Cafebot, your assistant for visual coffee plant analysis. Upload a leaf photo and I'll classify it as healthy, rust or red spider mite. I can also answer questions about coffee farm management.",
   "chatPhotoPrompt": "Analyze the attached image.",
   "galleryHeader": "Gallery",
   "gallerySubtitle": "Analyzed photos · {count}",
