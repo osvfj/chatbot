@@ -1,63 +1,7 @@
 import { join } from "node:path";
-import { Effect, Layer, ManagedRuntime } from "effect";
-import { RpcServer } from "effect/unstable/rpc";
-import { app, BrowserWindow, MessageChannelMain, session, type MessagePortMain } from "electron";
-import { AllRpcs } from "../shared/rpc";
-import { layerIpcServer, RpcPortHandoff, type IpcServerPort } from "./ipc-server";
-import { sendMessage } from "./services/chat";
-import { analyzeImage } from "./services/vision";
+import { app, BrowserWindow, session } from "electron";
 
-const HandlersLive = AllRpcs.toLayer(
-  Effect.sync(() => ({
-    SendMessage: (payload) =>
-      sendMessage(payload.content, {
-        ...(payload.apiKey === undefined ? {} : { apiKey: payload.apiKey }),
-        ...(payload.model === undefined ? {} : { model: payload.model }),
-        ...(payload.endpoint === undefined ? {} : { endpoint: payload.endpoint }),
-      }),
-    AnalyzeImage: (payload: { readonly fileName: string; readonly data: Uint8Array }) =>
-      analyzeImage(payload.fileName, payload.data),
-  })),
-);
-
-const Live: Layer.Layer<RpcPortHandoff | RpcServer.Protocol> = RpcServer.layer(AllRpcs, {
-  disableFatalDefects: true,
-}).pipe(Layer.provide(HandlersLive), Layer.provideMerge(layerIpcServer));
-
-const runtime = ManagedRuntime.make(Live);
-
-const toServerPort = (port: MessagePortMain): IpcServerPort => {
-  const wrapped = new Map<
-    (...args: ReadonlyArray<unknown>) => void,
-    (messageEvent: { data: unknown }) => void
-  >();
-  const on = ((event: "message" | "close", listener: (...args: ReadonlyArray<unknown>) => void) => {
-    if (event === "message") {
-      const handler = (messageEvent: { data: unknown }): void =>
-        listener({ data: messageEvent.data });
-      wrapped.set(listener, handler);
-      port.on("message", handler);
-    } else {
-      port.on("close", listener as () => void);
-    }
-  }) as IpcServerPort["on"];
-  const off = ((_event: "message", listener: (...args: ReadonlyArray<unknown>) => void) => {
-    const handler = wrapped.get(listener);
-    if (handler !== undefined) {
-      port.off("message", handler);
-      wrapped.delete(listener);
-    }
-  }) as IpcServerPort["off"];
-  return {
-    on,
-    off,
-    postMessage: (message) => port.postMessage(message),
-    start: () => port.start(),
-    close: () => port.close(),
-  };
-};
-
-const createWindow = (bind: (port: IpcServerPort) => void): void => {
+const createWindow = (): void => {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -75,12 +19,6 @@ const createWindow = (bind: (port: IpcServerPort) => void): void => {
 
   window.on("ready-to-show", () => window.show());
 
-  window.webContents.on("did-finish-load", () => {
-    const channel = new MessageChannelMain();
-    window.webContents.postMessage("rpc-port", null, [channel.port2]);
-    bind(toServerPort(channel.port1));
-  });
-
   const devServerUrl = process.env.ELECTRON_RENDERER_URL;
   if (devServerUrl !== undefined) {
     void window.loadURL(devServerUrl);
@@ -89,29 +27,21 @@ const createWindow = (bind: (port: IpcServerPort) => void): void => {
   }
 };
 
-app.whenReady().then(
-  () => {
-    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-      callback(permission === "media");
-    });
+app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === "media");
+  });
 
-    runtime.runPromise(RpcPortHandoff).then((handoff) => {
-      createWindow(handoff.bind);
-      app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-          createWindow(handoff.bind);
-        }
-      });
-    });
-  },
-  (cause) => {
-    console.error("No se pudo iniciar el servidor RPC de Cafebot", cause);
-    app.quit();
-  },
-);
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    void runtime.dispose().finally(() => app.quit());
+    app.quit();
   }
 });
