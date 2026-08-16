@@ -16,6 +16,10 @@ export class ChatMessage extends Schema.Class<ChatMessage>("ChatMessage")({
   attachments: Schema.optional(Schema.Array(MessageAttachment)),
 }) {}
 
+export class ChatDelta extends Schema.Class<ChatDelta>("ChatDelta")({
+  delta: Schema.String,
+}) {}
+
 export class ChatReply extends Schema.Class<ChatReply>("ChatReply")({
   message: ChatMessage,
   suggestions: Schema.Array(Schema.NonEmptyString),
