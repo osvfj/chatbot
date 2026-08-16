@@ -26,6 +26,7 @@ import {
 import { conversationUuidAtom, darkModeAtom, detectionsAtom } from "../../lib/atoms";
 import { applyTheme, storeTheme } from "../../lib/theme";
 import { cycleLanguage, useLanguage, useMessages } from "../../lib/use-language";
+import { ZenSettingsDialog } from "./zen-settings-dialog";
 
 export function AppSidebar() {
   const m = useMessages();
@@ -102,6 +103,9 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu className="gap-1.5">
+          <SidebarMenuItem>
+            <ZenSettingsDialog />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip={language.toUpperCase()}
