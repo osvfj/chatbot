@@ -20,8 +20,6 @@
   "chatCapture": "Capturar",
   "chatBack": "Volver",
   "chatWelcome": "¡Hola! Soy Cafebot, tu asistente para la detección de enfermedades del cafeto. Sube una foto de una hoja y la analizaré, o pregúntame sobre roya, cercospora, ojo de gallo, broca o minador.",
-  "chatAnalysisResult": "Analicé la imagen \"{fileName}\": se detectó {diseaseName} con un {confidence}% de confianza. Encontrarás esta foto en la galería con el detalle completo.",
-  "chatErrorReply": "Lo siento, hubo un problema al generar la respuesta. Inténtalo de nuevo en un momento.",
   "chatPhotoPrompt": "Analiza la imagen adjunta.",
   "galleryHeader": "Galería",
   "gallerySubtitle": "Fotos analizadas · {count}",

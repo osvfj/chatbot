@@ -20,8 +20,6 @@
   "chatCapture": "Kaptire",
   "chatBack": "Retounen",
   "chatWelcome": "Bonjou! Se mwen Cafebot, asistan ou pou deteksyon maladi pye kafe. Voye yon foto yon fèy epi m ap analize l, oswa mande m pou wouy, cercospora, ojo de gallo, broca oswa minèr.",
-  "chatAnalysisResult": "M analize imaj la \"{fileName}\": m detekte {diseaseName} ak yon konfyans {confidence}%. W ap jwenn foto sa a nan galeri a ak tout detay.",
-  "chatErrorReply": "Padon, te gen yon pwoblèm lè m te jenere repons lan. Eseye ankò nan yon ti moman.",
   "chatPhotoPrompt": "Analize imaj la tache.",
   "galleryHeader": "Galeri",
   "gallerySubtitle": "Foto analize · {count}",

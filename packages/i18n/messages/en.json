@@ -20,8 +20,6 @@
   "chatCapture": "Capture",
   "chatBack": "Back",
   "chatWelcome": "Hi! I'm Cafebot, your coffee plant disease detection assistant. Upload a photo of a leaf and I'll analyze it, or ask me about rust, cercospora, coffee berry disease, berry borer or leaf miner.",
-  "chatAnalysisResult": "I analyzed the image \"{fileName}\": I detected {diseaseName} with {confidence}% confidence. You'll find this photo in the gallery with the full details.",
-  "chatErrorReply": "Sorry, there was a problem generating the response. Try again in a moment.",
   "chatPhotoPrompt": "Analyze the attached image.",
   "galleryHeader": "Gallery",
   "gallerySubtitle": "Analyzed photos · {count}",
