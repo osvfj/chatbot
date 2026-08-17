@@ -72,9 +72,9 @@ def rules_endpoint(body: dict):
 @app.post("/rate")
 def rate(body: dict):
     state = str(body.get("state", ""))
-    action = body.get("action", "llm")
-    if action not in ("kb", "tree", "llm"):
-        action = "llm"
+    action = body.get("action", "llm_guided")
+    if action not in ("knowledge_guided", "classification_guided", "llm_guided"):
+        action = "llm_guided"
     reward = float(body.get("reward", 0.0))
     learner.update(state, action, reward)
     learner.record(state, action, reward)

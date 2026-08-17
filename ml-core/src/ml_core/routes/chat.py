@@ -361,9 +361,9 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             "Si la fuente no responde algo, dilo claramente y recomienda consultar a un técnico."
         )
     selected_source = contexto["policy"].get("selected_source")
-    if selected_source == "kb":
+    if selected_source == "knowledge_guided":
         instrucciones.append("FUENTE SELECCIONADA: prioriza el conocimiento recuperado del grafo y resume sus hechos.")
-    elif selected_source == "tree":
+    elif selected_source == "classification_guided":
         instrucciones.append("FUENTE SELECCIONADA: prioriza la explicación de clasificación y la evidencia observable antes de ampliar la respuesta.")
     else:
         instrucciones.append("FUENTE SELECCIONADA: puedes redactar con el LLM, pero respeta siempre las reglas, la evidencia y la decisión bayesiana.")

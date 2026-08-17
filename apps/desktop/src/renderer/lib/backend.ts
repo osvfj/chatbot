@@ -141,7 +141,7 @@ export const api = {
 
   rate: (body: {
     readonly state: string;
-    readonly action: "kb" | "tree" | "llm";
+    readonly action: "knowledge_guided" | "classification_guided" | "llm_guided";
     readonly reward: number;
   }): Promise<unknown> => request("/rate", { method: "POST", body: JSON.stringify(body) }),
 

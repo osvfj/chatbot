@@ -7,7 +7,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 Q_TABLE_PATH = DATA_DIR / "q_table.json"
 FEEDBACK_PATH = DATA_DIR / "feedback.jsonl"
 
-SOURCES = ["kb", "tree", "llm"]
+SOURCES = ["knowledge_guided", "classification_guided", "llm_guided"]
 
 ALPHA = 0.1
 GAMMA = 0.9
@@ -32,7 +32,9 @@ class QLearner:
         self.q = _load_q()
 
     def choose(self, state):
-        actions = self.q.setdefault(state, {source: 0.0 for source in SOURCES})
+        actions = self.q.setdefault(state, {})
+        for source in SOURCES:
+            actions.setdefault(source, 0.0)
         if random.random() < EPSILON:
             return random.choice(SOURCES)
         return max(actions, key=actions.get)

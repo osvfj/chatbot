@@ -20,7 +20,7 @@ export interface DialogueQuestion {
 
 export interface LearnerDecision {
   readonly state: string;
-  readonly action: "kb" | "tree" | "llm";
+  readonly action: "knowledge_guided" | "classification_guided" | "llm_guided";
 }
 
 export const pendingReplyAtom = Atom.make<PendingReply | null>(null).pipe(Atom.keepAlive);
