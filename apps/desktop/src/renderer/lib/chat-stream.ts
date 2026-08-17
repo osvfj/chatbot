@@ -45,6 +45,7 @@ export interface ChatStreamOptions {
   readonly fotoId?: string | undefined;
   readonly answerId?: string | undefined;
   readonly freeText?: string | undefined;
+  readonly mode: "classical" | "llm";
   readonly apiKey: string;
   readonly model: string;
   readonly endpoint: string;
@@ -68,6 +69,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
       ...(options.fotoId === undefined ? {} : { foto_id: options.fotoId }),
       ...(options.answerId === undefined ? {} : { answer_id: options.answerId }),
       ...(options.freeText === undefined ? {} : { free_text: options.freeText }),
+      mode: options.mode,
       apiKey: options.apiKey,
       model: options.model,
       endpoint: options.endpoint,

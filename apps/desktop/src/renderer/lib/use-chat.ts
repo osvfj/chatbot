@@ -40,6 +40,7 @@ export function useChat() {
       fotoId?: string | undefined,
       answerId?: string,
       freeText?: string,
+      mode: "classical" | "llm" = "classical",
     ): void => {
       const trimmed = content.trim();
       if (trimmed.length === 0) {
@@ -52,6 +53,7 @@ export function useChat() {
         ...(fotoId === undefined ? {} : { fotoId }),
         ...(answerId === undefined ? {} : { answerId }),
         ...(freeText === undefined ? {} : { freeText }),
+        mode,
         key: crypto.randomUUID(),
       });
     },

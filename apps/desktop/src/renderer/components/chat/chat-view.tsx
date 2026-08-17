@@ -13,6 +13,7 @@ import { useUploadPhoto } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
 import { conversationMetaAtom, conversationUuidAtom, messagesAtom } from "../../lib/atoms";
 import { dialogueQuestionAtom, learnerDecisionAtom } from "../../lib/streaming";
+import { chatModeAtom, persistChatMode } from "../../lib/zen-settings";
 import { api } from "../../lib/backend";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
@@ -39,6 +40,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const [, setMessages] = useAtom(messagesAtom);
   const [dialogueQuestion, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
   const [learnerDecision, setLearnerDecision] = useAtom(learnerDecisionAtom);
+  const [chatMode, setChatMode] = useAtom(chatModeAtom);
   const busy = isWaiting || uploadPhoto.isPending;
 
   const history = useQuery({
@@ -122,9 +124,16 @@ export function ChatView({ conversationId }: ChatViewProps) {
         const foto = await uploadPhoto.mutateAsync({ chatId, file });
         fotoId = foto.id;
       }
-      sendReply(chatId, trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(), fotoId);
+      sendReply(
+        chatId,
+        trimmed.length > 0 ? trimmed : m.chatPhotoPrompt(),
+        fotoId,
+        undefined,
+        undefined,
+        chatMode,
+      );
     } else {
-      sendReply(chatId, trimmed);
+      sendReply(chatId, trimmed, undefined, undefined, undefined, chatMode);
     }
   };
 
@@ -136,7 +145,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
     if (conversationId === undefined) return;
     appendUserMessage(answer.label);
     setDialogueQuestion(null);
-    sendReply(conversationId, answer.label, undefined, answer.optionId, answer.freeText);
+    sendReply(conversationId, answer.label, undefined, answer.optionId, answer.freeText, chatMode);
   };
 
   const handleDialoguePhoto = async (file: File, description: string): Promise<void> => {
@@ -145,7 +154,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
     const dataUrl = await readAsDataUrl(file);
     appendUserMessage(description, [{ name: file.name, sizeBytes: file.size, dataUrl }]);
     setDialogueQuestion(null);
-    sendReply(conversationId, description, foto.id, undefined, description);
+    sendReply(conversationId, description, foto.id, undefined, description, chatMode);
   };
 
   const handleRate = (reward: number): void => {
@@ -160,7 +169,22 @@ export function ChatView({ conversationId }: ChatViewProps) {
           <SidebarTrigger aria-label={m.sidebarCollapse()} />
           <div>
             <h1 className="text-lg font-semibold tracking-tight">{m.chatHeader()}</h1>
-            <p className="text-sm text-muted-foreground">{m.chatSubtitle()}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">{m.chatSubtitle()}</p>
+              <select
+                value={chatMode}
+                onChange={(event) => {
+                  const next = event.target.value === "llm" ? "llm" : "classical";
+                  setChatMode(next);
+                  persistChatMode(next);
+                }}
+                className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                aria-label="Modo del chatbot"
+              >
+                <option value="classical">Clásico</option>
+                <option value="llm">LLM</option>
+              </select>
+            </div>
           </div>
         </div>
         <Tooltip>

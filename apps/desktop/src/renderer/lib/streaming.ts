@@ -6,6 +6,7 @@ export interface PendingReply {
   readonly fotoId?: string | undefined;
   readonly answerId?: string | undefined;
   readonly freeText?: string | undefined;
+  readonly mode: "classical" | "llm";
   readonly key: string;
 }
 

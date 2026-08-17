@@ -3,8 +3,10 @@ import { Atom } from "effect/unstable/reactivity";
 const ZEN_API_KEY_STORAGE = "cafebot:zen-api-key";
 const ZEN_MODEL_STORAGE = "cafebot:zen-model";
 const ZEN_ACCOUNT_STORAGE = "cafebot:zen-account";
+const CHAT_MODE_STORAGE = "cafebot:chat-mode";
 
 export type ZenAccount = "zen" | "go";
+export type ChatMode = "classical" | "llm";
 
 export const ZEN_MODELS = [
   { id: "deepseek-v4-flash-free", paid: false, zen: true, go: false },
@@ -41,6 +43,10 @@ export const zenAccountAtom = Atom.make<ZenAccount>(
   readStored(ZEN_ACCOUNT_STORAGE) === "go" ? "go" : "zen",
 ).pipe(Atom.keepAlive);
 
+export const chatModeAtom = Atom.make<ChatMode>(
+  readStored(CHAT_MODE_STORAGE) === "llm" ? "llm" : "classical",
+).pipe(Atom.keepAlive);
+
 export const defaultZenModel = (account: ZenAccount): string =>
   account === "go" ? "deepseek-v4-flash" : "deepseek-v4-flash-free";
 
@@ -59,4 +65,8 @@ export const persistZenModel = (value: string): void => {
 
 export const persistZenAccount = (value: ZenAccount): void => {
   localStorage.setItem(ZEN_ACCOUNT_STORAGE, value);
+};
+
+export const persistChatMode = (value: ChatMode): void => {
+  localStorage.setItem(CHAT_MODE_STORAGE, value);
 };

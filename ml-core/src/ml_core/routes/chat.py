@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import httpx
 from uuid import uuid4
 from pathlib import Path
 
@@ -131,17 +133,8 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
     )
     selected_source = learner.choose(learner_state)
     intent_policy = _intent_policy(prediccion, foto, evidence)
-    facts = {
-        "intent": prediccion["ensemble"],
-        "confidence": confidence,
-        "has_photo": foto is not None,
-        "has_evidence": any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
-        "detector_status": (deteccion or {}).get("status"),
-        "sentiment": sentimiento["label"] if sentimiento is not None else "structured",
-        "sintoma": "pustulas_amarillas" if "polvo" in evidence["symptoms"] and "amarillo" in evidence["colors"] else "manchas_circulares" if "manchas" in evidence["symptoms"] else "lesiones_grises" if "gris" in evidence["colors"] else None,
-        "estres_hidrico": "sequia" in evidence["symptoms"] or "sequia" in evidence["colors"],
-        "plaga": "broca" if prediccion["ensemble"] == "broca" else "minador" if prediccion["ensemble"] == "minador" else None,
-    }
+    facts = _rule_facts(content, prediccion, evidence, deteccion)
+    facts["sentiment"] = sentimiento["label"] if sentimiento is not None else "structured"
     rule_result = rules.evaluate(facts)
     policy["selected_source"] = selected_source
     policy["learner_state"] = learner_state
@@ -185,6 +178,33 @@ def _intent_policy(prediction, foto, evidence):
     if not has_evidence:
         return {"action": "ask_for_description", "must_have": ["symptom_or_photo"], "max_questions": 1}
     return {"action": "answer_with_context", "must_have": [], "max_questions": 0}
+
+
+def _rule_facts(content, prediction, evidence, detection):
+    normalized = content.casefold()
+    percentage_match = re.search(r"(\d+(?:[.,]\d+)?)\s*%", normalized)
+    hectares_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:hectáreas|hectareas|ha)\b", normalized)
+    percentage = float(percentage_match.group(1).replace(",", ".")) if percentage_match else None
+    hectares = float(hectares_match.group(1).replace(",", ".")) if hectares_match else None
+    symptoms = set(evidence["symptoms"])
+    colors = set(evidence["colors"])
+    return {
+        "intent": prediction["ensemble"],
+        "confidence": float((detection or {}).get("confianza") or 0.0),
+        "has_photo": detection is not None,
+        "has_evidence": any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
+        "detector_status": (detection or {}).get("status"),
+        "sintoma": "pustulas_amarillas" if "polvo" in symptoms and ("amarillo" in colors or "naranja" in colors) else "manchas_circulares" if "manchas" in symptoms else "lesiones_grises" if "gris" in colors else None,
+        "estacion": "lluvias" if any(word in normalized for word in ("lluvia", "lluvias", "lloviendo")) else None,
+        "estres_hidrico": any(word in normalized for word in ("sequia", "sequía", "sed", "falta de agua")),
+        "plaga": "broca" if prediction["ensemble"] == "broca" or "broca" in normalized else "minador" if prediction["ensemble"] == "minador" or "minador" in normalized else None,
+        "infestacion_pct": percentage if prediction["ensemble"] == "broca" or "broca" in normalized else None,
+        "hojas_minadas_pct": percentage if prediction["ensemble"] == "minador" or "minador" in normalized else None,
+        "enemigos_naturales": any(word in normalized for word in ("enemigo natural", "enemigos naturales", "depredador")),
+        "sombra_excesiva": any(word in normalized for word in ("sombra excesiva", "mucha sombra", "muy sombreado")),
+        "caficultor": any(word in normalized for word in ("caficultor", "productor de café", "productor de cafe")),
+        "hectareas": hectares,
+    }
 
 
 def _pregunta_diagnostico(foto):
@@ -298,6 +318,22 @@ def _stream_classical(text):
     yield "data: [DONE]\n\n"
 
 
+def _stream_zen(messages, api_key, model, endpoint):
+    with httpx.stream(
+        "POST",
+        endpoint,
+        json={"model": model, "messages": messages, "temperature": 0.4, "stream": True},
+        headers={"content-type": "application/json", "authorization": "Bearer " + api_key, "accept": "text/event-stream"},
+        timeout=90,
+    ) as response:
+        if response.status_code != 200:
+            body = response.read().decode()
+            yield "data: " + json.dumps({"error": {"type": "status_error", "message": f"{response.status_code}: {body[:300]}"}}) + "\n\n"
+            return
+        for linea in response.iter_lines():
+            yield linea + "\n"
+
+
 @router.post("/chats/{chat_id}/chat")
 def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     _get_chat(chat_id, auth["finca"])
@@ -308,6 +344,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     api_key = str(body.get("apiKey") or os.environ.get("OPENCODE_API_KEY") or "public")
     model = str(body.get("model") or DEFAULT_MODEL)
     endpoint = str(body.get("endpoint") or DEFAULT_ENDPOINT)
+    mode = "llm" if body.get("mode") == "llm" else "classical"
 
     foto = _get_foto(foto_id, auth["finca"]) if foto_id else None
     dialogue_state = _get_dialogue_state(chat_id, auth["finca"])
@@ -459,7 +496,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         ) + "\n\n"
         if pregunta is not None:
             return
-        stream = _stream_classical(_classical_response(contexto, decision))
+        stream = _stream_zen(mensajes, api_key, model, endpoint) if mode == "llm" else _stream_classical(_classical_response(contexto, decision))
         texto = []
         for linea in stream:
             yield linea

@@ -44,6 +44,7 @@ export function ChatStreamer() {
       ...(pending.fotoId === undefined ? {} : { fotoId: pending.fotoId }),
       ...(pending.answerId === undefined ? {} : { answerId: pending.answerId }),
       ...(pending.freeText === undefined ? {} : { freeText: pending.freeText }),
+      mode: pending.mode,
       apiKey,
       model,
       endpoint: zenEndpoint(account),
