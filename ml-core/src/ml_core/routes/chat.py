@@ -12,7 +12,7 @@ from ..core.dialogue import choose_question, discrepancy, question as dialogue_q
 from ..core.nlp import extract_evidence
 from ..db import connect
 from ..security import now_iso, require_user
-from ..services import bundle, knowledge
+from ..services import bundle, knowledge, learner
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
 VISION_IDS = {"HEALTHY": "healthy", "RUST": "leaf-rust", "RED_SPIDER_MITE": "red-spider-mite"}
@@ -120,6 +120,19 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
         "must_not_confirm_diagnosis": deteccion is not None and deteccion["status"] != "detected",
         "ask_for_evidence_if_empty": not any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
     }
+    confidence = float((deteccion or {}).get("confianza") or 0.0)
+    confidence_band = "high" if confidence >= 0.75 else "medium" if confidence >= 0.55 else "low"
+    learner_state = ":".join(
+        (
+            str(prediccion["ensemble"]),
+            confidence_band,
+            "knowledge" if knowledge_result.get("found") else "no_knowledge",
+            sentimiento["label"] if sentimiento is not None else "structured",
+        )
+    )
+    selected_source = learner.choose(learner_state)
+    policy["selected_source"] = selected_source
+    policy["learner_state"] = learner_state
     bloques.append(
         "[Clasificación de la consulta]\n"
         + json.dumps(
@@ -127,7 +140,7 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
                 "intencion": prediccion,
                 "sentimiento": sentimiento,
                 "evidencia_pln": evidence,
-                "politica_dialogo": policy,
+            "politica_dialogo": policy,
                 "conocimiento_recuperado": knowledge_result,
             },
             ensure_ascii=False,
@@ -347,6 +360,13 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             "productos o afirmaciones que no estén respaldados por la fuente o por la decisión del orquestador. "
             "Si la fuente no responde algo, dilo claramente y recomienda consultar a un técnico."
         )
+    selected_source = contexto["policy"].get("selected_source")
+    if selected_source == "kb":
+        instrucciones.append("FUENTE SELECCIONADA: prioriza el conocimiento recuperado del grafo y resume sus hechos.")
+    elif selected_source == "tree":
+        instrucciones.append("FUENTE SELECCIONADA: prioriza la explicación de clasificación y la evidencia observable antes de ampliar la respuesta.")
+    else:
+        instrucciones.append("FUENTE SELECCIONADA: puedes redactar con el LLM, pero respeta siempre las reglas, la evidencia y la decisión bayesiana.")
     if contexto["sentiment"] is not None and contexto["policy"]["tone"] == "empathetic":
         instrucciones.append(
             "POLÍTICA DE TONO: el usuario parece preocupado o frustrado. Valida brevemente su preocupación, "
