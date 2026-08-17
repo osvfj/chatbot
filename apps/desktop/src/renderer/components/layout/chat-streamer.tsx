@@ -56,6 +56,11 @@ export function ChatStreamer() {
         console.log("Confianza:", context.bayesian?.confidence);
         console.log("Evidencia acumulada:", context.bayesian?.evidence);
         console.groupEnd();
+        console.groupCollapsed("[Cafebot] Política de intención");
+        console.log("Acción:", context.intent_policy?.action);
+        console.log("Requisitos:", context.intent_policy?.must_have);
+        console.log("Máximo de preguntas:", context.intent_policy?.max_questions);
+        console.groupEnd();
         console.groupCollapsed("[Cafebot] Grafo de conocimiento");
         console.log("Encontrado:", context.knowledge?.found);
         console.log("Consulta:", context.knowledge?.query);

@@ -13,6 +13,11 @@ export interface ChatContext {
     readonly cost?: number | null;
     readonly response?: string | null;
   } | null;
+  readonly intent_policy?: {
+    readonly action: string;
+    readonly must_have: ReadonlyArray<string>;
+    readonly max_questions: number;
+  } | null;
   readonly sentiment?: {
     readonly label: string;
     readonly probas: Readonly<Record<string, number>>;
@@ -113,6 +118,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
           readonly intent?: unknown;
           readonly question?: DialogueQuestion | null;
           readonly knowledge?: ChatContext["knowledge"];
+          readonly intent_policy?: ChatContext["intent_policy"];
           readonly bayesian?: ChatContext["bayesian"];
           readonly sentiment?: ChatContext["sentiment"];
           readonly policy?: ChatContext["policy"];
@@ -121,6 +127,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
           options.onContext({
             question: payload.question ?? null,
             knowledge: payload.knowledge ?? null,
+            intent_policy: payload.intent_policy ?? null,
             bayesian: payload.bayesian ?? null,
             sentiment: payload.sentiment ?? null,
             policy: payload.policy ?? null,

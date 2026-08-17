@@ -3,7 +3,6 @@ import os
 from uuid import uuid4
 from pathlib import Path
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -12,7 +11,7 @@ from ..core.dialogue import choose_question, discrepancy, question as dialogue_q
 from ..core.nlp import extract_evidence
 from ..db import connect
 from ..security import now_iso, require_user
-from ..services import bundle, knowledge, learner
+from ..services import bundle, knowledge, learner, rules
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
 VISION_IDS = {"HEALTHY": "healthy", "RUST": "leaf-rust", "RED_SPIDER_MITE": "red-spider-mite"}
@@ -131,8 +130,22 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
         )
     )
     selected_source = learner.choose(learner_state)
+    intent_policy = _intent_policy(prediccion, foto, evidence)
+    facts = {
+        "intent": prediccion["ensemble"],
+        "confidence": confidence,
+        "has_photo": foto is not None,
+        "has_evidence": any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
+        "detector_status": (deteccion or {}).get("status"),
+        "sentiment": sentimiento["label"] if sentimiento is not None else "structured",
+        "sintoma": "pustulas_amarillas" if "polvo" in evidence["symptoms"] and "amarillo" in evidence["colors"] else "manchas_circulares" if "manchas" in evidence["symptoms"] else "lesiones_grises" if "gris" in evidence["colors"] else None,
+        "estres_hidrico": "sequia" in evidence["symptoms"] or "sequia" in evidence["colors"],
+        "plaga": "broca" if prediccion["ensemble"] == "broca" else "minador" if prediccion["ensemble"] == "minador" else None,
+    }
+    rule_result = rules.evaluate(facts)
     policy["selected_source"] = selected_source
     policy["learner_state"] = learner_state
+    policy["intent_policy"] = intent_policy
     bloques.append(
         "[Clasificación de la consulta]\n"
         + json.dumps(
@@ -155,7 +168,23 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
         "policy": policy,
         "knowledge": knowledge_result,
         "knowledge_query": knowledge_query,
+        "intent_policy": intent_policy,
+        "rules": rule_result,
     }
+
+
+def _intent_policy(prediction, foto, evidence):
+    intent = prediction["ensemble"]
+    has_evidence = any(evidence[key] for key in ("symptoms", "plant_parts", "colors"))
+    if intent == "analizar_foto":
+        if foto is None:
+            return {"action": "request_photo", "must_have": ["photo"], "max_questions": 0}
+        return {"action": "visual_diagnosis", "must_have": ["photo", "visual_confirmation"], "max_questions": 3}
+    if intent in ("roya", "manejo_integrado", "nutricion", "riego"):
+        return {"action": "retrieve_domain_knowledge", "topic": intent, "must_have": [], "max_questions": 1}
+    if not has_evidence:
+        return {"action": "ask_for_description", "must_have": ["symptom_or_photo"], "max_questions": 1}
+    return {"action": "answer_with_context", "must_have": [], "max_questions": 0}
 
 
 def _pregunta_diagnostico(foto):
@@ -228,20 +257,45 @@ def _stream_mock():
     yield "data: [DONE]\n\n"
 
 
-def _stream_zen(messages, api_key, model, endpoint):
-    with httpx.stream(
-        "POST",
-        endpoint,
-            json={"model": model, "messages": messages, "temperature": 0.4, "stream": True},
-        headers={"content-type": "application/json", "authorization": "Bearer " + api_key, "accept": "text/event-stream"},
-        timeout=90,
-    ) as response:
-        if response.status_code != 200:
-            body = response.read().decode()
-            yield "data: " + json.dumps({"error": {"type": "status_error", "message": f"{response.status_code}: {body[:300]}"}}) + "\n\n"
-            return
-        for linea in response.iter_lines():
-            yield linea + "\n"
+def _classical_response(context, decision):
+    parts = []
+    if context["sentiment"] is not None and context["sentiment"]["label"] == "negativo":
+        parts.append("Entiendo tu preocupación. ")
+    if decision is not None:
+        names = {"HEALTHY": "hoja sana", "RUST": "roya del cafeto", "RED_SPIDER_MITE": "arañita roja"}
+        hypothesis = decision["top_hypothesis"]
+        parts.append(
+            "La evidencia disponible sugiere "
+            + names.get(hypothesis, hypothesis)
+            + " con una confianza de "
+            + f"{decision['confidence']:.0%}"
+            + ". Esta es una orientación y no sustituye una revisión técnica.\n\n"
+        )
+    elif context["knowledge"].get("found"):
+        parts.append(str(context["knowledge"].get("response") or ""))
+    elif context["intent"]["ensemble"] == "saludo":
+        parts.append("¡Hola! Soy Cafebot. Puedo ayudarte a analizar una hoja de cafeto y consultar información sobre enfermedades, plagas y manejo integrado.")
+    elif context["intent"]["ensemble"] == "despedida":
+        parts.append("Hasta luego. Recuerda monitorear el cafetal y consultar a un técnico si observas cambios importantes.")
+    elif context["intent"]["ensemble"] == "agradecimiento":
+        parts.append("Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía.")
+    else:
+        parts.append(
+            "Puedo ayudarte a analizar una fotografía, describir síntomas del cafeto o consultar información sobre roya, arañita roja y manejo integrado."
+        )
+    if context["detection"] is not None and context["detection"].get("recomendacion"):
+        parts.append("\n\nSiguiente paso: " + context["detection"]["recomendacion"])
+    applied = context["rules"].get("applied", [])
+    if applied:
+        parts.append("\n\nRegla aplicada: " + applied[0]["conclusion"])
+    return "".join(parts)
+
+
+def _stream_classical(text):
+    for start in range(0, len(text), 120):
+        chunk = {"choices": [{"delta": {"content": text[start : start + 120]}}]}
+        yield "data: " + json.dumps(chunk, ensure_ascii=False) + "\n\n"
+    yield "data: [DONE]\n\n"
 
 
 @router.post("/chats/{chat_id}/chat")
@@ -268,6 +322,8 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     analysis_text = str(body.get("free_text") or content) if is_dialogue_answer else content
     contexto = _contexto_consulta(analysis_text, foto, analyze_user_text=not is_dialogue_answer or bool(body.get("free_text")))
     pregunta = _pregunta_diagnostico(foto) if dialogue_state is None else None
+    if dialogue_state is None and contexto["intent_policy"]["action"] == "request_photo":
+        pregunta = dialogue_question("photo_followup")
     decision = None
     bayesian_state = None
     if dialogue_state is not None:
@@ -340,6 +396,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             "conocimiento_recuperado": contexto["knowledge"],
             "sentimiento": contexto["sentiment"],
             "politica_dialogo": contexto["policy"],
+            "reglas": contexto["rules"],
             "estado_bayesiano": bayesian_state,
         },
         ensure_ascii=False,
@@ -360,6 +417,12 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             "productos o afirmaciones que no estén respaldados por la fuente o por la decisión del orquestador. "
             "Si la fuente no responde algo, dilo claramente y recomienda consultar a un técnico."
         )
+    instrucciones.append(
+        "POLÍTICA DE INTENCIÓN AUTORITATIVA:\n"
+        + json.dumps(contexto["intent_policy"], ensure_ascii=False)
+        + "\nCumple la acción y los requisitos de esta política. Si exige una fotografía o evidencia, "
+        "no la sustituyas con una explicación genérica."
+    )
     selected_source = contexto["policy"].get("selected_source")
     if selected_source == "knowledge_guided":
         instrucciones.append("FUENTE SELECCIONADA: prioriza el conocimiento recuperado del grafo y resume sus hechos.")
@@ -385,7 +448,9 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
                 "sentiment": contexto["sentiment"],
             "evidence": contexto["evidence"],
                 "policy": contexto["policy"],
+                "rules": contexto["rules"],
                 "knowledge": contexto["knowledge"],
+                "intent_policy": contexto["intent_policy"],
             "bayesian": bayesian_state,
                 "question": pregunta,
                 "decision": decision,
@@ -394,10 +459,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         ) + "\n\n"
         if pregunta is not None:
             return
-        if MOCK:
-            stream = _stream_mock()
-        else:
-            stream = _stream_zen(mensajes, api_key, model, endpoint)
+        stream = _stream_classical(_classical_response(contexto, decision))
         texto = []
         for linea in stream:
             yield linea
