@@ -4,6 +4,23 @@ import type { DialogueQuestion } from "./streaming";
 
 export interface ChatContext {
   readonly question: DialogueQuestion | null;
+  readonly sentiment?: {
+    readonly label: string;
+    readonly probas: Readonly<Record<string, number>>;
+    readonly confidence: number;
+  } | null;
+  readonly policy?: {
+    readonly tone: string;
+    readonly verbosity: string;
+    readonly must_not_confirm_diagnosis: boolean;
+    readonly ask_for_evidence_if_empty: boolean;
+  } | null;
+  readonly bayesian?: {
+    readonly hypotheses: Readonly<Record<string, number>>;
+    readonly top_hypothesis: string | null;
+    readonly confidence: number;
+    readonly evidence: ReadonlyArray<unknown>;
+  } | null;
 }
 
 export interface ChatStreamOptions {
@@ -83,12 +100,17 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
           readonly choices?: ReadonlyArray<{ readonly delta?: { readonly content?: string } }>;
           readonly detection?: unknown;
           readonly intent?: unknown;
-          readonly sentiment?: unknown;
           readonly question?: DialogueQuestion | null;
+          readonly bayesian?: ChatContext["bayesian"];
+          readonly sentiment?: ChatContext["sentiment"];
+          readonly policy?: ChatContext["policy"];
         };
         if (eventName === "context") {
           options.onContext({
             question: payload.question ?? null,
+            bayesian: payload.bayesian ?? null,
+            sentiment: payload.sentiment ?? null,
+            policy: payload.policy ?? null,
           });
           eventName = "";
           continue;

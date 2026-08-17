@@ -46,6 +46,7 @@ interface MessageListProps {
         readonly label: string;
       }) => void)
     | undefined;
+  readonly onDialoguePhoto?: ((file: File, description: string) => void) | undefined;
 }
 
 export function MessageList({
@@ -54,6 +55,7 @@ export function MessageList({
   streaming,
   dialogueQuestion,
   onDialogueAnswer,
+  onDialoguePhoto,
 }: MessageListProps) {
   const m = useMessages();
   return (
@@ -131,6 +133,7 @@ export function MessageList({
                     question={dialogueQuestion}
                     disabled={isWaiting}
                     onSubmit={onDialogueAnswer}
+                    onPhoto={onDialoguePhoto}
                   />
                 </MessageScrollerItem>
               )}

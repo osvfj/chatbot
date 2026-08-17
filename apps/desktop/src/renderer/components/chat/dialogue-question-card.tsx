@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { SendIcon } from "lucide-react";
 import { Button } from "@cafebot/ui/components/button";
 import { Textarea } from "@cafebot/ui/components/textarea";
 import type { DialogueQuestion } from "../../lib/streaming";
+import { CameraCapture } from "./camera-capture";
 
 interface DialogueQuestionCardProps {
   readonly question: DialogueQuestion;
@@ -12,11 +13,20 @@ interface DialogueQuestionCardProps {
     readonly freeText: string;
     readonly label: string;
   }) => void;
+  readonly onPhoto?: ((file: File, description: string) => void) | undefined;
 }
 
-export function DialogueQuestionCard({ question, disabled, onSubmit }: DialogueQuestionCardProps) {
+export function DialogueQuestionCard({
+  question,
+  disabled,
+  onSubmit,
+  onPhoto,
+}: DialogueQuestionCardProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [photoDescription, setPhotoDescription] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const canSubmit = selected !== null || freeText.trim().length > 0;
 
   const submit = (): void => {
@@ -29,6 +39,61 @@ export function DialogueQuestionCard({ question, disabled, onSubmit }: DialogueQ
       label,
     });
   };
+
+  const handleFile = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file !== undefined) onPhoto?.(file, photoDescription.trim());
+  };
+
+  if (question.id === "photo_followup" && onPhoto !== undefined) {
+    return (
+      <div className="mt-3 w-full max-w-xl rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <p className="mb-3 text-sm font-medium">{question.text}</p>
+        {cameraOpen ? (
+          <CameraCapture
+            onCapture={(file) => {
+              setCameraOpen(false);
+              onPhoto(file, photoDescription.trim());
+            }}
+            onBack={() => setCameraOpen(false)}
+          />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Textarea
+              value={photoDescription}
+              onChange={(event) => setPhotoDescription(event.target.value)}
+              disabled={disabled}
+              placeholder="Describe qué observas en esta nueva fotografía..."
+              className="mb-3 min-h-20 w-full resize-none"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFile}
+            />
+            <Button
+              type="button"
+              disabled={disabled || photoDescription.trim().length === 0}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Seleccionar fotografía
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled || photoDescription.trim().length === 0}
+              onClick={() => setCameraOpen(true)}
+            >
+              Abrir cámara
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-3 w-full max-w-xl rounded-2xl border border-border bg-card p-4 shadow-sm">

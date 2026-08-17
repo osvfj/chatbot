@@ -44,6 +44,18 @@ export function ChatStreamer() {
       signal: controller.signal,
       onContext: (context) => {
         console.info("[ml-core] Contexto crudo enviado al LLM", context);
+        console.groupCollapsed("[Cafebot] Actualización bayesiana");
+        console.table(context.bayesian?.hypotheses ?? {});
+        console.log("Hipótesis principal:", context.bayesian?.top_hypothesis);
+        console.log("Confianza:", context.bayesian?.confidence);
+        console.log("Evidencia acumulada:", context.bayesian?.evidence);
+        console.groupEnd();
+        console.groupCollapsed("[Cafebot] Análisis de sentimiento");
+        console.log("Etiqueta:", context.sentiment?.label);
+        console.table(context.sentiment?.probas ?? {});
+        console.log("Confianza:", context.sentiment?.confidence);
+        console.log("Política aplicada:", context.policy);
+        console.groupEnd();
         setDialogueQuestion(context.question);
       },
       onDelta: (text) => setStreamText(text),

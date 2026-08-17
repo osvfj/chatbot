@@ -138,6 +138,15 @@ export function ChatView({ conversationId }: ChatViewProps) {
     sendReply(conversationId, answer.label, undefined, answer.optionId, answer.freeText);
   };
 
+  const handleDialoguePhoto = async (file: File, description: string): Promise<void> => {
+    if (conversationId === undefined) return;
+    const foto = await uploadPhoto.mutateAsync({ chatId: conversationId, file });
+    const dataUrl = await readAsDataUrl(file);
+    appendUserMessage(description, [{ name: file.name, sizeBytes: file.size, dataUrl }]);
+    setDialogueQuestion(null);
+    sendReply(conversationId, description, foto.id, undefined, description);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -171,6 +180,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
         streaming={streaming}
         dialogueQuestion={dialogueQuestion}
         onDialogueAnswer={handleDialogueAnswer}
+        onDialoguePhoto={(file, description) => void handleDialoguePhoto(file, description)}
       />
       <ChatInput
         onSend={handleSend}
