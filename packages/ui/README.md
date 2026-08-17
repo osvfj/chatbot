@@ -16,6 +16,7 @@ El paquete no conoce usuarios, fincas, chats ni modelos de ML. Solo contiene pre
 - Los componentes exponen variantes mediante `class-variance-authority`.
 - Las vistas de la aplicación reciben datos y callbacks; la persistencia vive en `ml-core` y TanStack Query.
 - Los estilos de Markdown se mantienen en el renderer porque dependen del contenido de respuestas del chat.
+- Las tarjetas de preguntas, fotografía de seguimiento y feedback se componen en `apps/desktop`; este paquete solo aporta primitives reutilizables.
 
 ## Uso
 

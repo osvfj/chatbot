@@ -1,36 +1,62 @@
 # Desktop
 
-Aplicación Electron 43 + React 19 para Cafebot.
+Aplicación Electron 43 + React 19 de Cafebot.
 
 ## Responsabilidades
 
-- Mostrar el chat, galería, autenticación y ajustes.
-- Guardar el token JWT en `localStorage`.
+- Mostrar autenticación, chat, galería y álbumes.
+- Guardar el JWT en `localStorage`.
 - Consumir `ml-core` mediante HTTP.
-- Consumir respuestas del chat mediante SSE.
-- Mantener la respuesta parcial del LLM mientras el usuario cambia de pestaña.
-- Mostrar Markdown, detecciones y álbumes.
+- Procesar eventos SSE.
+- Seleccionar modo `Clásico` o `LLM`.
+- Mostrar preguntas adaptativas y respuestas estructuradas.
+- Permitir seleccionar archivos o abrir la cámara para fotografías de seguimiento.
+- Mostrar feedback positivo o negativo para Q-learning.
 
-## Flujo de chat
+## Flujo De Chat
 
 1. El usuario inicia sesión o registra una finca.
 2. El primer mensaje crea un chat en `ml-core`.
-3. El renderer envía el mensaje a `POST /chats/{id}/chat`.
-4. `ChatStreamer` consume el SSE y actualiza el texto progresivamente.
-5. `ml-core` persiste el mensaje del usuario y la respuesta del assistant.
+3. Una fotografía se sube a `POST /chats/{id}/photos`.
+4. El backend ejecuta el SVM y devuelve `foto_id`.
+5. El renderer envía el mensaje, `foto_id`, modo y respuestas estructuradas a `/chat`.
+6. `ChatStreamer` procesa `event: context`.
+7. La UI muestra pregunta, Bayes, reglas, conocimiento y sentimiento en consola.
+8. La respuesta llega progresivamente mediante SSE.
+9. El usuario puede valorar la última respuesta.
 
-Cuando se adjunta una imagen, primero se sube a `POST /chats/{id}/photos`. El backend ejecuta el detector disponible, guarda el resultado y devuelve el `foto_id`. Ese ID se envía luego al endpoint de chat para que el backend agregue la detección al contexto del LLM.
+## Modos
 
-## Estado y consultas
+El selector del encabezado ofrece:
 
-- TanStack Query maneja auth, historial, chats, álbumes, fotos y uploads.
-- Los atoms de Effect conservan únicamente estado visual y mensajes renderizados.
-- `ChatStreamer` vive en el layout de la aplicación, no dentro de la ruta de chat; por eso cambiar a Galería no cancela el stream.
-- Las imágenes protegidas se descargan con `fetch` y se convierten en object URLs antes de mostrarse en un `<img>`.
+- `Clásico`: respuesta determinista sin llamada LLM.
+- `LLM`: el backend conserva el razonamiento clásico y usa el proveedor configurado para redactar.
 
-## OpenCode
+La selección se guarda como `cafebot:chat-mode`.
 
-Los ajustes de OpenCode se almacenan en `localStorage`: cuenta Zen o Go, API key, modelo y endpoint derivado de la cuenta. La configuración viaja en cada request de chat.
+## Preguntas Y Fotografías
+
+Las preguntas aparecen dentro del historial. Las preguntas normales ofrecen opciones y texto libre. Cuando existe discrepancia visual-textual, la tarjeta solicita una descripción y ofrece:
+
+- `Seleccionar fotografía`;
+- `Abrir cámara`.
+
+La nueva fotografía se sube, se analiza y se incorpora a la fusión de observaciones.
+
+## Feedback
+
+La última respuesta muestra 👍 y 👎. El frontend envía el estado y modo de contextualización a `/rate`, con recompensa `1` o `-1`. El backend persiste la tabla Q y el registro de feedback.
+
+## Consola De Depuración
+
+Durante `context`, el renderer agrupa:
+
+- `[Cafebot] Actualización bayesiana`;
+- `[Cafebot] Análisis de sentimiento`;
+- `[Cafebot] Grafo de conocimiento`;
+- `[Cafebot] Política de intención`.
+
+Esto permite observar el back-and-forth antes de la respuesta final.
 
 ## Comandos
 
@@ -42,6 +68,4 @@ corepack pnpm --filter @cafebot/desktop build
 
 La aplicación necesita `ml-core` activo en `http://127.0.0.1:8765`.
 
-## Estado de migración
-
-El proceso main ya no contiene el servidor RPC ni los servicios de chat, visión o LLM. `@cafebot/sdk` todavía se importa desde el renderer para crear `ChatMessage` y `MessageAttachment`; esos tipos pueden reemplazarse después por DTOs planos del backend.
+El proceso main no contiene RPC ni servicios de chat, visión o LLM; el renderer utiliza temporalmente `@cafebot/sdk` para `ChatMessage` y `MessageAttachment`.

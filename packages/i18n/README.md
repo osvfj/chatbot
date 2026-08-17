@@ -16,4 +16,4 @@ Los mensajes fuente están en `messages/*.json`. Paraglide genera las funciones 
 2. Ejecutar `pnpm --filter @cafebot/i18n compile`.
 3. Consumir los mensajes desde `@cafebot/i18n`.
 
-La interfaz usa `languageAtom` para mantener el locale seleccionado. Los prompts del LLM no cambian con cada locale: el system prompt es estático para preservar el prompt cache e indica que el modelo responda en el idioma del usuario.
+La interfaz usa `languageAtom` para mantener el locale seleccionado. En modo clásico las plantillas y documentos conservan el contenido técnico en español; en modo LLM el system prompt indica que el modelo responda en el idioma del usuario.
