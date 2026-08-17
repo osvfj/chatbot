@@ -12,7 +12,7 @@ from ..core.dialogue import choose_question, discrepancy, question as dialogue_q
 from ..core.nlp import extract_evidence
 from ..db import connect
 from ..security import now_iso, require_user
-from ..services import bundle
+from ..services import bundle, knowledge
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
 VISION_IDS = {"HEALTHY": "healthy", "RUST": "leaf-rust", "RED_SPIDER_MITE": "red-spider-mite"}
@@ -27,7 +27,8 @@ SYSTEM_PROMPT = (
     "Responde en el mismo idioma del usuario, con un lenguaje claro y cercano. "
     "Ofrece consejos prácticos de manejo integrado cuando el tema lo requiera. "
     "La evidencia estructurada y la decisión externa del sistema tienen prioridad sobre tus propias suposiciones. "
-    "No vuelvas a diagnosticar ignorando la decisión bayesiana. Responde de forma breve y accionable."
+    "No vuelvas a diagnosticar ignorando la decisión bayesiana. Responde de forma breve y accionable. "
+    "Cuando exista conocimiento recuperado, úsalo como fuente principal y no inventes recomendaciones que lo contradigan."
 )
 
 DEFAULT_ENDPOINT = os.environ.get("ML_CORE_LLM_ENDPOINT", "https://opencode.ai/zen/v1/chat/completions")
@@ -107,6 +108,12 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
         "duration": None,
         "severity": "unknown",
     }
+    knowledge_query = content
+    if deteccion is not None:
+        knowledge_query += " " + str(deteccion.get("enfermedad") or "") + " " + str(deteccion.get("id_enfermedad") or "")
+    knowledge_query += " " + " ".join(evidence["symptoms"] + evidence["colors"] + evidence["plant_parts"])
+    knowledge_result = knowledge.search(knowledge_query, "astar") if knowledge_query.strip() else {"found": False, "path": []}
+    knowledge_result["query"] = knowledge_query
     policy = {
         "tone": "empathetic" if sentimiento is not None and sentimiento["label"] == "negativo" else "clear",
         "verbosity": "short" if sentimiento is not None and sentimiento["label"] == "negativo" else "normal",
@@ -121,6 +128,7 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
                 "sentimiento": sentimiento,
                 "evidencia_pln": evidence,
                 "politica_dialogo": policy,
+                "conocimiento_recuperado": knowledge_result,
             },
             ensure_ascii=False,
         )
@@ -132,6 +140,8 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
         "sentiment": sentimiento,
         "evidence": evidence,
         "policy": policy,
+        "knowledge": knowledge_result,
+        "knowledge_query": knowledge_query,
     }
 
 
@@ -314,6 +324,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     contexto["prompt"] += "\n\n[Estado interno de decisión; no mostrar literalmente al usuario]\n" + json.dumps(
         {
             "evidencia_pln": contexto["evidence"],
+            "conocimiento_recuperado": contexto["knowledge"],
             "sentimiento": contexto["sentiment"],
             "politica_dialogo": contexto["policy"],
             "estado_bayesiano": bayesian_state,
@@ -327,6 +338,14 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             + json.dumps(decision, ensure_ascii=False)
             + "\nUsa esta hipótesis como conclusión del flujo. No presentes otras enfermedades como alternativas. "
             "Explica que es una orientación basada en la imagen y las respuestas del usuario."
+        )
+    if contexto["knowledge"].get("found"):
+        instrucciones.append(
+            "FUENTE AGRONÓMICA RECUPERADA Y PRIORITARIA:\n"
+            + str(contexto["knowledge"].get("response") or "")
+            + "\nUsa esta fuente para los hechos agronómicos. No agregues datos específicos, dosis, "
+            "productos o afirmaciones que no estén respaldados por la fuente o por la decisión del orquestador. "
+            "Si la fuente no responde algo, dilo claramente y recomienda consultar a un técnico."
         )
     if contexto["sentiment"] is not None and contexto["policy"]["tone"] == "empathetic":
         instrucciones.append(
@@ -345,7 +364,8 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
                 "intent": contexto["intent"],
                 "sentiment": contexto["sentiment"],
             "evidence": contexto["evidence"],
-            "policy": contexto["policy"],
+                "policy": contexto["policy"],
+                "knowledge": contexto["knowledge"],
             "bayesian": bayesian_state,
                 "question": pregunta,
                 "decision": decision,

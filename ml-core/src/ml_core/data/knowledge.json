@@ -8,7 +8,8 @@
     },
     "roya": {
       "keywords": ["roya", "oxido", "oxid", "pustula", "polvo amarillo", "naranja"],
-      "response": "La roya del cafeto (Hemileia vastatrix) se manifiesta como pústulas amarillo-anaranjadas en el envés de la hoja y provoca defoliación severa. Control: podas fitosanitarias, fungicidas de cobre o triazoles en época de lluvias y variedades resistentes como Catimor o Castillo."
+      "response": "La roya del cafeto (Hemileia vastatrix) se manifiesta como pústulas amarillo-anaranjadas en el envés de la hoja y provoca defoliación severa.",
+      "document": "roya.md"
     },
     "cercospora": {
       "keywords": ["cercospora", "mancha de hierro", "mancha", "circulo"],
@@ -38,6 +39,16 @@
       "keywords": ["foto", "imagen", "analiza", "subi", "hoja enferma"],
       "response": "Para analizar la foto adjunta ejecuto mi herramienta de visión y te devuelvo el diagnóstico con su nivel de confianza. Puedo detallarte la enfermedad detectada y las recomendaciones de manejo."
     },
+    "arañita_roja": {
+      "keywords": ["arañita roja", "acaro", "acaros", "telaraña", "telarañas", "puntos", "punteado", "red spider mite"],
+      "response": "La arañita roja produce punteado fino y amarillamiento en las hojas, y puede formar telarañas en el envés.",
+      "document": "aranita-roja.md"
+    },
+    "hoja_sana": {
+      "keywords": ["sana", "saludable", "verde uniforme", "sin manchas", "sin daño", "sin telarañas"],
+      "response": "Una hoja sana suele conservar un color verde uniforme y no presentar manchas, polvo, perforaciones ni telarañas.",
+      "document": "diagnostico-diferencial.md"
+    },
     "manejo_integrado": {
       "keywords": [
         "manejo integrado",
@@ -45,7 +56,8 @@
         "enemigos naturales",
         "variedades resistentes"
       ],
-      "response": "El manejo integrado combina prácticas culturales, control biológico, monitoreo y, solo si hace falta, control químico. Favorece enemigos naturales, elimina focos de infección y usa variedades resistentes para reducir el uso de plaguicidas."
+      "response": "El manejo integrado combina prácticas culturales, control biológico, monitoreo y, solo si hace falta, control químico.",
+      "document": "manejo-integrado.md"
     }
   },
   "edges": [
@@ -58,10 +70,13 @@
     { "from": "inicio", "to": "nutricion", "weight": 1 },
     { "from": "inicio", "to": "riego", "weight": 1 },
     { "from": "inicio", "to": "analizar_foto", "weight": 1 },
+    { "from": "inicio", "to": "arañita_roja", "weight": 1 },
+    { "from": "inicio", "to": "hoja_sana", "weight": 1 },
     { "from": "inicio", "to": "manejo_integrado", "weight": 1 },
     { "from": "saludo", "to": "roya", "weight": 2 },
     { "from": "saludo", "to": "analizar_foto", "weight": 2 },
     { "from": "roya", "to": "manejo_integrado", "weight": 2 },
+    { "from": "arañita_roja", "to": "manejo_integrado", "weight": 2 },
     { "from": "roya", "to": "nutricion", "weight": 3 },
     { "from": "cercospora", "to": "nutricion", "weight": 2 },
     { "from": "cercospora", "to": "riego", "weight": 2 },

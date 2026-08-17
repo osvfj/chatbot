@@ -13,6 +13,11 @@ class KnowledgeGraph:
         raw = json.loads(path.read_text(encoding="utf-8"))
         self.start = raw["start"]
         self.nodes = raw["nodes"]
+        self.documents = {
+            node_id: (DATA_DIR / "knowledge" / node["document"]).read_text(encoding="utf-8")
+            for node_id, node in self.nodes.items()
+            if node.get("document")
+        }
         self.keyword_sets = {
             node_id: {t for kw in node["keywords"] for t in tokenize(kw)}
             for node_id, node in self.nodes.items()
@@ -82,7 +87,7 @@ class KnowledgeGraph:
         return {
             "found": True,
             "algorithm": algorithm,
-            "response": self.nodes[goal]["response"],
+            "response": self.documents.get(goal, self.nodes[goal]["response"]),
             "node": goal,
             "path": path,
             "cost": result["cost"],

@@ -4,6 +4,15 @@ import type { DialogueQuestion } from "./streaming";
 
 export interface ChatContext {
   readonly question: DialogueQuestion | null;
+  readonly knowledge?: {
+    readonly query?: string;
+    readonly found?: boolean;
+    readonly algorithm?: string;
+    readonly node?: string;
+    readonly path?: ReadonlyArray<string>;
+    readonly cost?: number | null;
+    readonly response?: string | null;
+  } | null;
   readonly sentiment?: {
     readonly label: string;
     readonly probas: Readonly<Record<string, number>>;
@@ -101,6 +110,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
           readonly detection?: unknown;
           readonly intent?: unknown;
           readonly question?: DialogueQuestion | null;
+          readonly knowledge?: ChatContext["knowledge"];
           readonly bayesian?: ChatContext["bayesian"];
           readonly sentiment?: ChatContext["sentiment"];
           readonly policy?: ChatContext["policy"];
@@ -108,6 +118,7 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
         if (eventName === "context") {
           options.onContext({
             question: payload.question ?? null,
+            knowledge: payload.knowledge ?? null,
             bayesian: payload.bayesian ?? null,
             sentiment: payload.sentiment ?? null,
             policy: payload.policy ?? null,

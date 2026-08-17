@@ -50,6 +50,14 @@ export function ChatStreamer() {
         console.log("Confianza:", context.bayesian?.confidence);
         console.log("Evidencia acumulada:", context.bayesian?.evidence);
         console.groupEnd();
+        console.groupCollapsed("[Cafebot] Grafo de conocimiento");
+        console.log("Encontrado:", context.knowledge?.found);
+        console.log("Consulta:", context.knowledge?.query);
+        console.log("Nodo:", context.knowledge?.node);
+        console.log("Ruta:", context.knowledge?.path);
+        console.log("Costo:", context.knowledge?.cost);
+        console.log("Respuesta recuperada:", context.knowledge?.response);
+        console.groupEnd();
         console.groupCollapsed("[Cafebot] Análisis de sentimiento");
         console.log("Etiqueta:", context.sentiment?.label);
         console.table(context.sentiment?.probas ?? {});
