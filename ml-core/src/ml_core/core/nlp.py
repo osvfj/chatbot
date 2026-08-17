@@ -1,4 +1,5 @@
 import spacy
+import re
 
 nlp = spacy.load("es_core_news_sm")
 STOPWORDS = nlp.Defaults.stop_words
@@ -22,3 +23,14 @@ def tokenize(text, remove_stopwords=True):
     if remove_stopwords:
         tokens = [t for t in tokens if t not in STOPWORDS and len(t) > 1]
     return tokens
+
+
+def extract_evidence(text):
+    normalized = normalize(text)
+    return {
+        "symptoms": sorted({term for term in ("manchas", "puntos", "telarañas", "polvo", "pustulas", "amarillamiento", "defoliacion") if term in normalized or (term == "puntos" and "punt" in normalized)}),
+        "plant_parts": sorted({term for term in ("hoja", "hojas", "fruto", "frutos", "rama", "raiz") if term in normalized}),
+        "colors": sorted({term for term in ("amarillo", "naranja", "cafe", "gris", "verde") if term in normalized}),
+        "duration": next((match.group(0) for match in re.finditer(r"(?:hace|desde hace)\s+\w+(?:\s+\w+)?", normalized)), None),
+        "severity": "high" if any(term in normalized for term in ("grave", "muchas", "se cae", "severo")) else "unknown",
+    }

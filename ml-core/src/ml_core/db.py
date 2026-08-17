@@ -24,7 +24,7 @@ def init_db():
             "detector_status": "TEXT NOT NULL DEFAULT 'unavailable'",
             "top_predictions": "TEXT",
         },
-        "dialogo_estado": {"foto_id": "TEXT"},
+        "dialogo_estado": {"foto_id": "TEXT", "vision_inicial": "TEXT NOT NULL DEFAULT '{}'"},
     }
     for table, columns in migrations.items():
         existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}

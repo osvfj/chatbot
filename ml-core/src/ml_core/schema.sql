@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS dialogo_estado (
   chat_id TEXT PRIMARY KEY REFERENCES chat(id),
   finca_id TEXT NOT NULL REFERENCES finca(id),
   foto_id TEXT REFERENCES foto(id),
+  vision_inicial TEXT NOT NULL DEFAULT '{}',
   pregunta_id TEXT NOT NULL,
   pregunta_numero INTEGER NOT NULL DEFAULT 1,
   hipotesis TEXT NOT NULL,

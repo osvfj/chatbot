@@ -20,5 +20,24 @@
       "label": "No observo ninguno de esos signos",
       "evidence": {"RUST": -1.0, "RED_SPIDER_MITE": -1.0, "HEALTHY": 1.5}
     }
+  ],
+  "rust_confirmation": [
+    {"id": "rust_under_leaf", "label": "Sí, las manchas están debajo de la hoja", "evidence": {"RUST": 2.5, "HEALTHY": -0.5}},
+    {"id": "rust_not_under_leaf", "label": "No, están principalmente encima", "evidence": {"RUST": -1.0, "RED_SPIDER_MITE": 0.5}}
+  ],
+  "mite_confirmation": [
+    {"id": "mite_webbing", "label": "Sí, hay telarañas o punteado fino", "evidence": {"RED_SPIDER_MITE": 2.5, "HEALTHY": -0.5}},
+    {"id": "mite_no_webbing", "label": "No, no hay telarañas", "evidence": {"RED_SPIDER_MITE": -1.0, "RUST": 0.5}}
+  ],
+  "healthy_confirmation": [
+    {"id": "healthy_uniform_color", "label": "Sí, la hoja tiene un verde uniforme", "evidence": {"HEALTHY": 2.5, "RUST": -0.8, "RED_SPIDER_MITE": -0.8}},
+    {"id": "healthy_visible_damage", "label": "No, sí observo algún daño", "evidence": {"HEALTHY": -1.2, "RUST": 0.5, "RED_SPIDER_MITE": 0.5}}
+  ],
+  "severity_followup": [
+    {"id": "progressing", "label": "El problema se está extendiendo", "evidence": {"RUST": 0.5, "RED_SPIDER_MITE": 0.5}},
+    {"id": "stable", "label": "Se mantiene igual o está mejorando", "evidence": {"HEALTHY": 0.5}}
+  ],
+  "photo_followup": [
+    {"id": "upload_followup_photo", "label": "Subir otra fotografía", "evidence": {}}
   ]
 }
