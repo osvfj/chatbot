@@ -6,13 +6,19 @@ import { ChatMessage } from "@cafebot/sdk";
 import { toast } from "sonner";
 import { streamChat } from "../../lib/chat-stream";
 import { messagesAtom } from "../../lib/atoms";
-import { dialogueQuestionAtom, pendingReplyAtom, streamTextAtom } from "../../lib/streaming";
+import {
+  dialogueQuestionAtom,
+  learnerDecisionAtom,
+  pendingReplyAtom,
+  streamTextAtom,
+} from "../../lib/streaming";
 import { zenAccountAtom, zenApiKeyAtom, zenEndpoint, zenModelAtom } from "../../lib/zen-settings";
 
 export function ChatStreamer() {
   const [pending, setPending] = useAtom(pendingReplyAtom);
   const [, setStreamText] = useAtom(streamTextAtom);
   const [, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
+  const [, setLearnerDecision] = useAtom(learnerDecisionAtom);
   const [, setMessages] = useAtom(messagesAtom);
   const apiKey = useAtomValue(zenApiKeyAtom);
   const model = useAtomValue(zenModelAtom);
@@ -65,6 +71,15 @@ export function ChatStreamer() {
         console.log("Política aplicada:", context.policy);
         console.groupEnd();
         setDialogueQuestion(context.question);
+        if (
+          context.policy?.learner_state !== undefined &&
+          context.policy.selected_source !== undefined
+        ) {
+          setLearnerDecision({
+            state: context.policy.learner_state,
+            action: context.policy.selected_source,
+          });
+        }
       },
       onDelta: (text) => setStreamText(text),
       onDone: (text) => {
@@ -98,6 +113,7 @@ export function ChatStreamer() {
     setPending,
     setMessages,
     setDialogueQuestion,
+    setLearnerDecision,
   ]);
 
   return null;

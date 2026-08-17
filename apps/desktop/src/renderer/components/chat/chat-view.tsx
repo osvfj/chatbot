@@ -12,7 +12,7 @@ import { useChat } from "../../lib/use-chat";
 import { useUploadPhoto } from "../../lib/use-gallery";
 import { useMessages } from "../../lib/use-language";
 import { conversationMetaAtom, conversationUuidAtom, messagesAtom } from "../../lib/atoms";
-import { dialogueQuestionAtom } from "../../lib/streaming";
+import { dialogueQuestionAtom, learnerDecisionAtom } from "../../lib/streaming";
 import { api } from "../../lib/backend";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
@@ -38,6 +38,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const uploadPhoto = useUploadPhoto();
   const [, setMessages] = useAtom(messagesAtom);
   const [dialogueQuestion, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
+  const [learnerDecision, setLearnerDecision] = useAtom(learnerDecisionAtom);
   const busy = isWaiting || uploadPhoto.isPending;
 
   const history = useQuery({
@@ -147,6 +148,11 @@ export function ChatView({ conversationId }: ChatViewProps) {
     sendReply(conversationId, description, foto.id, undefined, description);
   };
 
+  const handleRate = (reward: number): void => {
+    if (learnerDecision === null) return;
+    void api.rate({ ...learnerDecision, reward }).then(() => setLearnerDecision(null));
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -181,6 +187,8 @@ export function ChatView({ conversationId }: ChatViewProps) {
         dialogueQuestion={dialogueQuestion}
         onDialogueAnswer={handleDialogueAnswer}
         onDialoguePhoto={(file, description) => void handleDialoguePhoto(file, description)}
+        learnerDecision={learnerDecision}
+        onRate={handleRate}
       />
       <ChatInput
         onSend={handleSend}

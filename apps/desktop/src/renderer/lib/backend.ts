@@ -139,6 +139,12 @@ export const api = {
     return request(`/chats/${chatId}/photos`, { method: "POST", body: form });
   },
 
+  rate: (body: {
+    readonly state: string;
+    readonly action: "kb" | "tree" | "llm";
+    readonly reward: number;
+  }): Promise<unknown> => request("/rate", { method: "POST", body: JSON.stringify(body) }),
+
   fetchPhoto: async (fotoId: string): Promise<Blob> => {
     const token = getToken();
     const res = await fetch(`${BACKEND_URL}/photos/${fotoId}`, {

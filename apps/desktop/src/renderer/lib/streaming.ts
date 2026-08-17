@@ -18,7 +18,13 @@ export interface DialogueQuestion {
   readonly max_questions: number;
 }
 
+export interface LearnerDecision {
+  readonly state: string;
+  readonly action: "kb" | "tree" | "llm";
+}
+
 export const pendingReplyAtom = Atom.make<PendingReply | null>(null).pipe(Atom.keepAlive);
 
 export const streamTextAtom = Atom.make<string>("").pipe(Atom.keepAlive);
 export const dialogueQuestionAtom = Atom.make<DialogueQuestion | null>(null).pipe(Atom.keepAlive);
+export const learnerDecisionAtom = Atom.make<LearnerDecision | null>(null).pipe(Atom.keepAlive);

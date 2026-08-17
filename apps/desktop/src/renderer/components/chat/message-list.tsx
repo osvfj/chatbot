@@ -1,6 +1,8 @@
 import { ChatMessage } from "@cafebot/sdk";
 import { Predicate } from "effect";
 import { CoffeeIcon } from "lucide-react";
+import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+import { Button } from "@cafebot/ui/components/button";
 import {
   Attachment,
   AttachmentContent,
@@ -26,7 +28,11 @@ import {
   MessageScrollerViewport,
 } from "@cafebot/ui/components/message-scroller";
 import { welcomeMessage } from "../../lib/atoms";
-import { type DialogueQuestion, type PendingReply } from "../../lib/streaming";
+import {
+  type DialogueQuestion,
+  type LearnerDecision,
+  type PendingReply,
+} from "../../lib/streaming";
 import { formatBytes, formatTime } from "../../lib/format";
 import { useMessages } from "../../lib/use-language";
 import { Markdown } from "./markdown";
@@ -47,6 +53,8 @@ interface MessageListProps {
       }) => void)
     | undefined;
   readonly onDialoguePhoto?: ((file: File, description: string) => void) | undefined;
+  readonly learnerDecision?: LearnerDecision | null | undefined;
+  readonly onRate?: ((reward: number) => void) | undefined;
 }
 
 export function MessageList({
@@ -56,6 +64,8 @@ export function MessageList({
   dialogueQuestion,
   onDialogueAnswer,
   onDialoguePhoto,
+  learnerDecision,
+  onRate,
 }: MessageListProps) {
   const m = useMessages();
   return (
@@ -115,7 +125,33 @@ export function MessageList({
                             </Bubble>
                           )}
                         </BubbleGroup>
-                        <MessageFooter>{formatTime(message.sentAt)}</MessageFooter>
+                        <MessageFooter>
+                          {formatTime(message.sentAt)}
+                          {!isUser &&
+                            index === messages.length - 1 &&
+                            learnerDecision !== null &&
+                            learnerDecision !== undefined &&
+                            onRate !== undefined && (
+                              <span className="ml-2 flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => onRate(1)}
+                                  aria-label="Respuesta útil"
+                                >
+                                  <ThumbsUpIcon className="size-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => onRate(-1)}
+                                  aria-label="Respuesta no útil"
+                                >
+                                  <ThumbsDownIcon className="size-3" />
+                                </Button>
+                              </span>
+                            )}
+                        </MessageFooter>
                       </MessageContent>
                     </Message>
                   </MessageGroup>

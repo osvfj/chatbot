@@ -1,6 +1,6 @@
 import { Predicate } from "effect";
 import { BACKEND_URL, getToken } from "./backend";
-import type { DialogueQuestion } from "./streaming";
+import type { DialogueQuestion, LearnerDecision } from "./streaming";
 
 export interface ChatContext {
   readonly question: DialogueQuestion | null;
@@ -23,6 +23,8 @@ export interface ChatContext {
     readonly verbosity: string;
     readonly must_not_confirm_diagnosis: boolean;
     readonly ask_for_evidence_if_empty: boolean;
+    readonly learner_state?: string;
+    readonly selected_source?: LearnerDecision["action"];
   } | null;
   readonly bayesian?: {
     readonly hypotheses: Readonly<Record<string, number>>;
