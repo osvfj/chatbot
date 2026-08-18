@@ -1,13 +1,29 @@
-import spacy
+import json
 import re
+from pathlib import Path
+
+import spacy
 
 nlp = spacy.load("es_core_news_sm")
 STOPWORDS = nlp.Defaults.stop_words
 _accent = str.maketrans("áéíóúüñ", "aeiouun")
 
+MODISMOS_PATH = Path(__file__).resolve().parent.parent / "data" / "modismos.json"
+MODISMOS = json.loads(MODISMOS_PATH.read_text(encoding="utf-8"))
+_MODISMOS_ORDENADOS = sorted(MODISMOS.items(), key=lambda item: len(item[0]), reverse=True)
+
+
+def normalizar_modismos(text):
+    resultado = text
+    for modismo, estandar in _MODISMOS_ORDENADOS:
+        patron = r"\b" + re.escape(modismo) + r"\b"
+        resultado = re.sub(patron, estandar, resultado, flags=re.IGNORECASE)
+    return resultado
+
 
 def normalize(text):
-    return text.lower().translate(_accent)
+    texto_con_modismos = normalizar_modismos(text.lower())
+    return texto_con_modismos.translate(_accent)
 
 
 def tokenize(text, remove_stopwords=True):
