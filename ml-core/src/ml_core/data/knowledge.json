@@ -58,6 +58,34 @@
       ],
       "response": "El manejo integrado combina prácticas culturales, control biológico, monitoreo y, solo si hace falta, control químico.",
       "document": "manejo-integrado.md"
+    },
+        "phoma": {
+      "keywords": ["phoma", "mancha negra", "mancha oscura", "costarricensis"],
+      "response": "La Phoma (Phoma costarricensis) produce manchas de color café oscuro a negro, de bordes irregulares, en hojas y ramas. Control: poda fitosanitaria del tejido infectado, mejorar la circulación de aire y evitar el exceso de humedad."
+    },
+    "poda": {
+      "keywords": ["poda", "podar", "renovacion", "poda de renovacion"],
+      "response": "La poda del cafetal se hace para renovar tejido productivo y reducir enfermedades. Se recomienda poda selectiva o de renovación cada 4-5 años según la variedad, retirando ramas improductivas y enfermas, y desinfectando las herramientas entre plantas."
+    },
+    "variedades_resistentes": {
+      "keywords": ["variedad resistente", "catimor", "castillo", "resistente a roya"],
+      "response": "Las variedades como Catimor y Castillo tienen resistencia genética a la roya del cafeto y son una alternativa clave dentro del manejo integrado, especialmente en zonas con antecedentes de brotes severos."
+    },
+    "control_biologico": {
+      "keywords": ["control biologico", "beauveria", "enemigos naturales", "depredador"],
+      "response": "El control biológico usa organismos naturales para reducir plagas sin depender solo de químicos. Beauveria bassiana es eficaz contra la broca en fases tempranas de infestación, y favorecer enemigos naturales reduce la necesidad de insecticidas contra el minador."
+    },
+    "sombra_cafetal": {
+      "keywords": ["sombra", "sombra excesiva", "arboles de sombra", "sombrio"],
+      "response": "El cafeto necesita un nivel de sombra regulado: ni muy expuesto al sol directo ni excesivamente sombreado. La sombra excesiva favorece hongos como el ojo de gallo por exceso de humedad; regula la densidad de árboles de sombra y mejora la ventilación."
+    },
+    "clima_altitud": {
+      "keywords": ["altitud", "clima", "temperatura", "altura"],
+      "response": "El café arábigo se desarrolla mejor entre 600 y 1200 metros sobre el nivel del mar, con temperaturas moderadas entre 18 y 24°C. Alturas menores o climas muy cálidos aumentan el estrés de la planta y la hacen más susceptible a plagas."
+    },
+    "asistencia_tecnica": {
+      "keywords": ["asistencia tecnica", "minagri", "apoyo tecnico", "programa de ayuda", "pequeño productor"],
+      "response": "El Ministerio de Agricultura (MINAGRI) ofrece programas de asistencia técnica gratuita para pequeños caficultores, generalmente dirigidos a productores con fincas de hasta 10 hectáreas. El sistema evalúa automáticamente la elegibilidad según el tamaño de la finca."
     }
   },
   "edges": [
@@ -85,6 +113,20 @@
     { "from": "minador", "to": "manejo_integrado", "weight": 2 },
     { "from": "nutricion", "to": "cercospora", "weight": 3 },
     { "from": "riego", "to": "cercospora", "weight": 3 },
-    { "from": "manejo_integrado", "to": "broca", "weight": 2 }
+    { "from": "manejo_integrado", "to": "broca", "weight": 2 },
+        { "from": "inicio", "to": "phoma", "weight": 1 },
+    { "from": "inicio", "to": "poda", "weight": 1 },
+    { "from": "inicio", "to": "variedades_resistentes", "weight": 1 },
+    { "from": "inicio", "to": "control_biologico", "weight": 1 },
+    { "from": "inicio", "to": "sombra_cafetal", "weight": 1 },
+    { "from": "inicio", "to": "clima_altitud", "weight": 1 },
+    { "from": "inicio", "to": "asistencia_tecnica", "weight": 1 },
+    { "from": "roya", "to": "variedades_resistentes", "weight": 2 },
+    { "from": "broca", "to": "control_biologico", "weight": 2 },
+    { "from": "minador", "to": "control_biologico", "weight": 2 },
+    { "from": "ojo_gallo", "to": "sombra_cafetal", "weight": 2 },
+    { "from": "manejo_integrado", "to": "poda", "weight": 2 },
+    { "from": "manejo_integrado", "to": "variedades_resistentes", "weight": 2 },
+    { "from": "manejo_integrado", "to": "control_biologico", "weight": 2 }
   ]
 }
