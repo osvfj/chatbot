@@ -10,3 +10,4 @@ q_table.json
 feedback.jsonl
 *.db
 storage/
+vision_train.log

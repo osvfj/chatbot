@@ -53,7 +53,21 @@ Antes de la respuesta se emite `event: context`, que contiene detección, intenc
 
 `vision/detector.py` carga `src/ml_core/models/vision.joblib`. La extracción usa HOG y HSV en imágenes redimensionadas a `128x128`. `ML_CORE_VISION_MIN_CONFIDENCE` tiene por defecto `0.55`; debajo del umbral se conserva `top_predictions` y se marca `uncertain`.
 
-El artefacto fue entrenado en Google Colab usando datasets Kaggle. El repositorio no contiene aún un manifiesto completo de hashes, particiones y versión exacta del entrenamiento.
+El entrenamiento corre en el equipo, igual que los clasificadores de texto:
+
+```bash
+ml-core-train-vision                        # descarga datasets Kaggle vía kagglehub
+ml-core-train-vision --data-dir ./fotos     # usa imágenes locales (sin internet)
+ml-core-train-vision --force                # re-entrena aunque ya exista
+```
+
+El script descarga los tres datasets públicos, balancea por clase (máx. 2500
+ejemplos), divide de forma estratificada y entrena un `Pipeline` de
+`StandardScaler + SVC(rbf, C=10, probability=True)`, guardando `vision.joblib`.
+En el arranque, si el modelo falta, `server.py` lo descarga y entrena
+automáticamente en segundo plano (asume conexión a internet); si se configura
+`ML_CORE_VISION_DATA_DIR` con una carpeta local de imágenes, se prioriza esa
+fuente para entrenar sin red.
 
 ## Bayes Y Discrepancias
 
@@ -116,6 +130,7 @@ El frontend muestra valoración positiva o negativa después de la respuesta. `/
 - `ML_CORE_LLM_MOCK=1`: mock de streaming para desarrollo.
 - `ML_CORE_SECRET`: clave JWT de al menos 32 bytes.
 - `ML_CORE_VISION_MIN_CONFIDENCE`: umbral visual.
+- `ML_CORE_VISION_DATA_DIR`: directorio local de imágenes para entrenar la visión en el arranque si falta el modelo (prioridad sobre la descarga de Kaggle).
 
 ## Límites
 

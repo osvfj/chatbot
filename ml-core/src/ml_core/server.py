@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,7 @@ from .db import init_db
 from .routes import albums, auth, chat, chats
 from .services import bundle, knowledge, learner, rules
 from .vision import detector
+from .vision.train import ensure_trained as ensure_vision_trained
 
 
 @asynccontextmanager
@@ -16,6 +18,9 @@ async def lifespan(_app):
     init_db()
     bundle.train()
     warmup_sentiment()
+    # Si falta el modelo de visión, se descarga y entrena en segundo plano
+    # para no bloquear el arranque de la API.
+    asyncio.create_task(asyncio.to_thread(ensure_vision_trained))
     yield
 
 
@@ -78,7 +83,12 @@ def rate(body: dict):
     reward = float(body.get("reward", 0.0))
     learner.update(state, action, reward)
     learner.record(state, action, reward)
-    return {"state": state, "action": action, "reward": reward, "q": learner.q.get(state, {})}
+    return {
+        "state": state,
+        "action": action,
+        "reward": reward,
+        "q": learner.q.get(state, {}),
+    }
 
 
 @app.post("/choose")
@@ -94,12 +104,20 @@ def choose(body: dict):
 def perceptron(body: dict):
     text = str(body.get("text", ""))
     prediction = bundle.predict(text)
-    return {"text": text, "label": prediction["mlp"]["intent"], "confidence": prediction["mlp"]["confidence"]}
+    return {
+        "text": text,
+        "label": prediction["mlp"]["intent"],
+        "confidence": prediction["mlp"]["confidence"],
+    }
 
 
 @app.get("/metrics")
 def metrics():
-    return {"dataset_size": len(bundle.texts), "classes": bundle.classes, "results": bundle.metrics()}
+    return {
+        "dataset_size": len(bundle.texts),
+        "classes": bundle.classes,
+        "results": bundle.metrics(),
+    }
 
 
 def main():

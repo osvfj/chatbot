@@ -10,7 +10,7 @@ dependencies = [
   "numpy>=1.26",
   "joblib>=1.4",
   "spacy>=3.7",
-  "es-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl",
+  "es-core-news-sm @ file:///C:/Users/osvfj/Documents/projects/chatbot/ml-core/vendor/es_core_news_sm-3.8.0-py3-none-any.whl",
   "pysentimiento>=0.7",
   "httpx>=0.27",
   "networkx>=3.3",
@@ -25,6 +25,7 @@ dependencies = [
 
 [project.scripts]
 ml-core = "ml_core.server:main"
+ml-core-train-vision = "ml_core.vision.train:main"
 
 [build-system]
 requires = ["hatchling"]
