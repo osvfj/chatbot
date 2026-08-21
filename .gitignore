@@ -19,6 +19,7 @@ Thumbs.db
 .env.local
 .env.production
 *.log
+.backend.pid
 
 coverage/
 .nyc_output/
