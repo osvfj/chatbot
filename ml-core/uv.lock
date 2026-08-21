@@ -553,9 +553,9 @@ wheels = [
 [[package]]
 name = "es-core-news-sm"
 version = "3.8.0"
-source = { path = "C:/Users/osvfj/Documents/projects/chatbot/ml-core/vendor/es_core_news_sm-3.8.0-py3-none-any.whl" }
+source = { registry = "vendor" }
 wheels = [
-    { filename = "es_core_news_sm-3.8.0-py3-none-any.whl", hash = "sha256:e451a83d6df79b87e9eed0cb553f03e99e36a3bab18a7b79f0dcfd1fdf875e12" },
+    { path = "es_core_news_sm-3.8.0-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -929,7 +929,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "bcrypt", specifier = ">=4.2" },
-    { name = "es-core-news-sm", path = "C:/Users/osvfj/Documents/projects/chatbot/ml-core/vendor/es_core_news_sm-3.8.0-py3-none-any.whl" },
+    { name = "es-core-news-sm" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "joblib", specifier = ">=1.4" },

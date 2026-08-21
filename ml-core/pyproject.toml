@@ -10,7 +10,7 @@ dependencies = [
   "numpy>=1.26",
   "joblib>=1.4",
   "spacy>=3.7",
-  "es-core-news-sm @ file:///C:/Users/osvfj/Documents/projects/chatbot/ml-core/vendor/es_core_news_sm-3.8.0-py3-none-any.whl",
+  "es-core-news-sm",
   "pysentimiento>=0.7",
   "httpx>=0.27",
   "networkx>=3.3",
@@ -39,3 +39,6 @@ allow-direct-references = true
 
 [tool.uv]
 package = true
+# Busca wheels locales en vendor/ para resolver es-core-news-sm sin red y
+# sin rutas absolutas (se resuelve relativo al pyproject.toml).
+find-links = ["vendor"]
