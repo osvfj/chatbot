@@ -81,12 +81,13 @@ def rate(body: dict):
     if action not in ("knowledge_guided", "classification_guided", "llm_guided"):
         action = "llm_guided"
     reward = float(body.get("reward", 0.0))
-    learner.update(state, action, reward)
+    propagated = learner.rate(state, action, reward)
     learner.record(state, action, reward)
     return {
         "state": state,
         "action": action,
         "reward": reward,
+        "propagated": propagated,
         "q": learner.q.get(state, {}),
     }
 

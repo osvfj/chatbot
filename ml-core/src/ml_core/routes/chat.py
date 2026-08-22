@@ -422,8 +422,46 @@ def _stream_mock():
     yield "data: [DONE]\n\n"
 
 
+def _explicar_clasificacion(intent, evidence):
+    """Explicación legible del ensemble y la evidencia para classification_guided."""
+    votos = (
+        ("árbol de decisión", intent["tree"]),
+        ("naive bayes", intent["bayes"]),
+        ("perceptrón multicapa", intent["mlp"]),
+    )
+    lineas = [
+        "Por el contenido del mensaje, lo interpreto como "
+        + str(intent["ensemble"])
+        + ".",
+        "Votos del ensemble: "
+        + ", ".join(
+            f"{nombre} → {modelo['intent']} ({modelo['confidence']:.0%})"
+            for nombre, modelo in votos
+        )
+        + ".",
+    ]
+    pistas = sorted(
+        {
+            pista
+            for clave in ("symptoms", "colors", "plant_parts")
+            for pista in evidence[clave]
+        }
+    )
+    if pistas:
+        lineas.append("Señales en tu descripción: " + ", ".join(pistas) + ".")
+    else:
+        lineas.append(
+            "Tu mensaje no incluyó síntomas específicos; describe lo que observas "
+            "en las hojas o envía una fotografía."
+        )
+    return "\n".join(lineas)
+
+
 def _classical_response(context, decision):
     parts = []
+    # La fuente elegida por el agente cambia cómo se construye la respuesta;
+    # sin esto, calificar en modo clásico no mediría efecto alguno.
+    selected = context["policy"].get("selected_source")
     if context["sentiment"] is not None and context["sentiment"]["label"] == "negativo":
         parts.append("Entiendo tu preocupación. ")
     if decision is not None:
@@ -433,14 +471,30 @@ def _classical_response(context, decision):
             "RED_SPIDER_MITE": "arañita roja",
         }
         hypothesis = decision["top_hypothesis"]
-        parts.append(
+        encabezado = (
             "La evidencia disponible sugiere "
             + names.get(hypothesis, hypothesis)
             + " con una confianza de "
             + f"{decision['confidence']:.0%}"
-            + ". Esta es una orientación y no sustituye una revisión técnica.\n\n"
         )
-    elif context["knowledge"].get("found"):
+        if selected == "classification_guided":
+            parts.append(
+                encabezado
+                + ".\n\n"
+                + _explicar_clasificacion(context["intent"], context["evidence"])
+            )
+        elif selected == "knowledge_guided" and context["knowledge"].get("found"):
+            parts.append(
+                encabezado
+                + ".\n\nRecomendaciones de la base de conocimientos:\n"
+                + str(context["knowledge"].get("response") or "")
+            )
+        else:
+            parts.append(
+                encabezado
+                + ". Esta es una orientación y no sustituye una revisión técnica.\n\n"
+            )
+    elif context["intent"]["ensemble"] == "saludo":
         parts.append(str(context["knowledge"].get("response") or ""))
     elif context["intent"]["ensemble"] == "saludo":
         parts.append(
@@ -454,6 +508,10 @@ def _classical_response(context, decision):
         parts.append(
             "Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía."
         )
+    elif selected == "classification_guided":
+        parts.append(_explicar_clasificacion(context["intent"], context["evidence"]))
+    elif context["knowledge"].get("found"):
+        parts.append(str(context["knowledge"].get("response") or ""))
     else:
         parts.append(
             "Puedo ayudarte a analizar una fotografía, describir síntomas del cafeto o consultar información sobre roya, arañita roja y manejo integrado."
@@ -536,6 +594,13 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         foto,
         analyze_user_text=not is_dialogue_answer or bool(body.get("free_text")),
     )
+    # El par (estado, acción) de este turno entra al episodio del chat; la
+    # recompensa llegará con la calificación o al cerrar el flujo.
+    learner.track(
+        chat_id,
+        contexto["policy"]["learner_state"],
+        contexto["policy"]["selected_source"],
+    )
     pregunta = _pregunta_diagnostico(foto) if dialogue_state is None else None
     if (
         dialogue_state is None
@@ -615,6 +680,8 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             pregunta = dialogue_question(question_id=next_question, number=next_number)
         else:
             _clear_dialogue_state(chat_id)
+            # Finalización del flujo: recompensa terminal del episodio.
+            learner.finish(chat_id)
             decision = {
                 "hypotheses": probabilities,
                 "top_hypothesis": top,
