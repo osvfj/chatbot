@@ -108,8 +108,21 @@ class QLearner:
         _save_q(self.q)
 
     def track(self, chat_id, state, action):
-        """Registra el par (estado, acción) del turno dentro de su episodio."""
+        """Registra el par (estado, acción) del turno dentro de su episodio.
+
+        Un cambio de fase conversacional (social → consulta/diagnóstico)
+        abre un episodio nuevo: la calificación de un diagnóstico no debe
+        arrastrar crédito ni castigo hacia los turnos sociales previos.
+        """
+        pairs = self._episodes.get(chat_id)
+        if pairs and pairs[-1][0].split(":", 1)[0] != state.split(":", 1)[0]:
+            self._episodes[chat_id] = []
         self._episodes.setdefault(chat_id, []).append((state, action))
+
+    def last_state(self, chat_id):
+        """Estado del último turno registrado, o None si no hay episodio."""
+        pairs = self._episodes.get(chat_id) or []
+        return pairs[-1][0] if pairs else None
 
     def reward(self, chat_id, amount, offset=-1):
         """Señal implícita sobre un par reciente sin cerrar el episodio.

@@ -591,7 +591,10 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     )
     # Señales implícitas sobre el turno anterior: cumplir con la foto pedida
     # suma; repetir la misma pregunta indica una respuesta insuficiente y
-    # resta. La calificación explícita de /rate sigue siendo la más fuerte.
+    # resta. Repetir un saludo es comportamiento normal del usuario, no una
+    # queja, así que las fases sociales quedan fuera del castigo.
+    fase_actual = contexto["policy"]["learner_state"].split(":", 1)[0]
+    fase_previa = (learner.last_state(chat_id) or "").split(":", 1)[0]
     if (
         dialogue_state is not None
         and foto_id
@@ -599,7 +602,7 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         and foto_id != dialogue_state["foto_id"]
     ):
         learner.reward(chat_id, 0.5)
-    elif repite_pregunta:
+    elif repite_pregunta and fase_actual != "social" and fase_previa != "social":
         learner.reward(chat_id, -0.5)
     # El par (estado, acción) de este turno entra al episodio del chat; la
     # recompensa llegará con la calificación o al cerrar el flujo.
