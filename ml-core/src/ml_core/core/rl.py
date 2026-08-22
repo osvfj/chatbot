@@ -28,6 +28,37 @@ ALPHA = 0.5
 GAMMA = 0.9
 EPSILON = 0.2
 
+SOCIAL_INTENTS = ("saludo", "despedida", "agradecimiento")
+
+# Política inicial por estado: valores previos a cualquier calificación que
+# orientan el arranque frío hacia la fuente razonable (conocimiento si hay
+# documento recuperado, explicación o flujo estándar si no); las recompensas
+# los corrigen con el uso.
+DEFAULT_POLICY = {
+    "diagnostico:con_knowledge": {"knowledge_guided": 0.5},
+    "diagnostico:sin_knowledge": {"llm_guided": 0.3},
+    "consulta:con_knowledge": {"knowledge_guided": 0.5},
+    "consulta:sin_knowledge": {"classification_guided": 0.3},
+}
+
+
+def conversation_state(prediccion, knowledge_result=None, deteccion=None):
+    """Estado reducido del agente: fase conversacional × conocimiento disponible.
+
+    Un espacio pequeño (6 estados) hace que pocas calificaciones basten para
+    mover la política; la intención fina y el sentimiento ya condicionan otras
+    partes del orquestador.
+    """
+    found = bool(knowledge_result and knowledge_result.get("found"))
+    ensemble = str(prediccion["ensemble"])
+    if ensemble in SOCIAL_INTENTS:
+        fase = "social"
+    elif deteccion is not None or ensemble == "analizar_foto":
+        fase = "diagnostico"
+    else:
+        fase = "consulta"
+    return f"{fase}:{'con_knowledge' if found else 'sin_knowledge'}"
+
 
 def _load_q():
     if Q_TABLE_PATH.exists():
@@ -50,9 +81,12 @@ class QLearner:
         self._episodes = {}
 
     def _actions(self, state):
-        actions = self.q.setdefault(state, {})
+        priors = DEFAULT_POLICY.get(state, {})
+        actions = self.q.setdefault(
+            state, {source: priors.get(source, 0.0) for source in SOURCES}
+        )
         for source in SOURCES:
-            actions.setdefault(source, 0.0)
+            actions.setdefault(source, priors.get(source, 0.0))
         return actions
 
     def choose(self, state):
@@ -76,6 +110,18 @@ class QLearner:
     def track(self, chat_id, state, action):
         """Registra el par (estado, acción) del turno dentro de su episodio."""
         self._episodes.setdefault(chat_id, []).append((state, action))
+
+    def reward(self, chat_id, amount, offset=-1):
+        """Señal implícita sobre un par reciente sin cerrar el episodio.
+
+        offset=-1 apunta al último turno registrado (el anterior al que se
+        está procesando ahora).
+        """
+        pairs = self._episodes.get(chat_id) or []
+        index = len(pairs) + offset
+        if 0 <= index < len(pairs):
+            state_t, action_t = pairs[index]
+            self.update(state_t, action_t, amount)
 
     def finish(self, chat_id, reward=1.0):
         """Recompensa terminal por finalización del flujo de diagnóstico."""

@@ -16,6 +16,7 @@ from ..core.dialogue import (
     update as update_dialogue,
 )
 from ..core.nlp import extract_evidence
+from ..core.rl import conversation_state
 from ..db import connect
 from ..security import now_iso, require_user
 from ..services import bundle, knowledge, learner, rules
@@ -156,18 +157,7 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
             evidence[key] for key in ("symptoms", "plant_parts", "colors")
         ),
     }
-    confidence = float((deteccion or {}).get("confianza") or 0.0)
-    confidence_band = (
-        "high" if confidence >= 0.75 else "medium" if confidence >= 0.55 else "low"
-    )
-    learner_state = ":".join(
-        (
-            str(prediccion["ensemble"]),
-            confidence_band,
-            "knowledge" if knowledge_result.get("found") else "no_knowledge",
-            sentimiento["label"] if sentimiento is not None else "structured",
-        )
-    )
+    learner_state = conversation_state(prediccion, knowledge_result, deteccion)
     selected_source = learner.choose(learner_state)
     intent_policy = _intent_policy(prediccion, foto, evidence)
     facts = _rule_facts(content, prediccion, evidence, deteccion)
@@ -583,6 +573,11 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     _persistir(chat_id, auth["finca"], "user", content, foto_id=foto_id)
 
     historia = _historia(chat_id)
+    usuarios_previos = [m["content"] for m in historia if m["role"] == "user"]
+    repite_pregunta = (
+        bool(usuarios_previos)
+        and usuarios_previos[-1].strip().casefold() == content.strip().casefold()
+    )
     if historia and historia[-1]["role"] == "user":
         historia = historia[:-1]
     is_dialogue_answer = dialogue_state is not None
@@ -594,6 +589,18 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         foto,
         analyze_user_text=not is_dialogue_answer or bool(body.get("free_text")),
     )
+    # Señales implícitas sobre el turno anterior: cumplir con la foto pedida
+    # suma; repetir la misma pregunta indica una respuesta insuficiente y
+    # resta. La calificación explícita de /rate sigue siendo la más fuerte.
+    if (
+        dialogue_state is not None
+        and foto_id
+        and dialogue_state["foto_id"]
+        and foto_id != dialogue_state["foto_id"]
+    ):
+        learner.reward(chat_id, 0.5)
+    elif repite_pregunta:
+        learner.reward(chat_id, -0.5)
     # El par (estado, acción) de este turno entra al episodio del chat; la
     # recompensa llegará con la calificación o al cerrar el flujo.
     learner.track(
