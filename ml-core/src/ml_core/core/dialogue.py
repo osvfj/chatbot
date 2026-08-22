@@ -65,6 +65,53 @@ _FREE_TEXT_PATTERNS = {
     for hypothesis, levels in _FREE_TEXT_EVIDENCE.items()
 }
 
+# Negación local: si una mención de síntoma va precedida por uno de estos
+# cues dentro de la misma cláusula, la evidencia se invierte en lugar de
+# sumarse ("no veo telarañas" es evidencia contra arañita roja).
+NEGATION_WINDOW = 3
+_NEGATION_CUES = frozenset(
+    (
+        "no",
+        "ni",
+        "nunca",
+        "jamas",
+        "sin",
+        "tampoco",
+        "apenas",
+        "ausencia",
+        "carece",
+        "carecen",
+        "falta",
+        "faltan",
+    )
+)
+_CLAUSE_SPLIT = re.compile(r"[.,;:!?\n]+|\b(?:pero|aunque|sino|excepto|salvo)\b")
+
+
+def _free_text_mentions(text):
+    """Clasifica las menciones del texto libre en afirmadas o negadas.
+
+    Devuelve dos conjuntos de tuplas (hipótesis, nivel): los que tienen al
+    menos una mención afirmada y los que solo tienen menciones negadas.
+    Una cláusula nueva (signo de puntuación o contraste) reinicia la
+    ventana de negación.
+    """
+    affirmed = set()
+    negated = set()
+    for clause in _CLAUSE_SPLIT.split(text):
+        tokens = re.findall(r"\w+", clause)
+        for index, token in enumerate(tokens):
+            for hypothesis, levels in _FREE_TEXT_PATTERNS.items():
+                for level, patterns in levels.items():
+                    if not any(pattern.search(token) for pattern in patterns):
+                        continue
+                    window = tokens[max(0, index - NEGATION_WINDOW) : index]
+                    if any(cue in _NEGATION_CUES for cue in window):
+                        negated.add((hypothesis, level))
+                    else:
+                        affirmed.add((hypothesis, level))
+    return affirmed, negated
+
 
 QUESTION_TEXT = {
     "visual_symptom_confirmation": "¿Qué observas principalmente en las hojas o en la planta?",
@@ -168,10 +215,13 @@ def update(
             log_scores[hypothesis] += float(weight)
     if free_text.strip():
         text = free_text.casefold().translate(_ACENTOS)
-        for hypothesis, levels in _FREE_TEXT_PATTERNS.items():
-            for level, patterns in levels.items():
-                if any(pattern.search(text) for pattern in patterns):
-                    log_scores[hypothesis] += FREE_TEXT_LLR[level]
+        affirmed, negated = _free_text_mentions(text)
+        for hypothesis, level in affirmed:
+            log_scores[hypothesis] += FREE_TEXT_LLR[level]
+        # Una mención negada invierte su aporte: hablar de la ausencia de un
+        # signo es evidencia en contra de la hipótesis que lo predice.
+        for hypothesis, level in negated - affirmed:
+            log_scores[hypothesis] -= FREE_TEXT_LLR[level]
     probabilities = _softmax(log_scores)
     top = max(probabilities, key=probabilities.get)
     return probabilities, top, probabilities[top]
