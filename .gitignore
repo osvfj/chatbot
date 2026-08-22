@@ -26,6 +26,3 @@ coverage/
 
 tmp/
 temp/
-
-# Informe de entrega: se mantiene solo local, nunca se commitea
-informe/
