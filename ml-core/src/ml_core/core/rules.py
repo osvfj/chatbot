@@ -5,10 +5,26 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 def _num(value):
+    # Un hecho ausente o nulo no es numérico y no puede validar una comparación.
+    if value is None:
+        return None
     try:
         return float(value)
     except (TypeError, ValueError):
-        return float("-inf")
+        return None
+
+
+def _compare(fact, threshold, op):
+    left, right = _num(fact), _num(threshold)
+    if left is None or right is None:
+        return False
+    if op == "gt":
+        return left > right
+    if op == "gte":
+        return left >= right
+    if op == "lt":
+        return left < right
+    return left <= right
 
 
 def _evaluate(condition, facts):
@@ -21,7 +37,8 @@ def _evaluate(condition, facts):
 
     fact = facts.get(condition["fact"])
     comparison_ops = ("equals", "ne", "gt", "gte", "lt", "lte")
-    if condition["fact"] not in facts and any(op in condition for op in comparison_ops):
+    # Un hecho desconocido (ausente o None) no valida ninguna condición.
+    if fact is None and any(op in condition for op in comparison_ops):
         return False
 
     if "is_true" in condition:
@@ -33,13 +50,13 @@ def _evaluate(condition, facts):
     if "ne" in condition:
         return fact != condition["ne"]
     if "gt" in condition:
-        return _num(fact) > _num(condition["gt"])
+        return _compare(fact, condition["gt"], "gt")
     if "gte" in condition:
-        return _num(fact) >= _num(condition["gte"])
+        return _compare(fact, condition["gte"], "gte")
     if "lt" in condition:
-        return _num(fact) < _num(condition["lt"])
+        return _compare(fact, condition["lt"], "lt")
     if "lte" in condition:
-        return _num(fact) <= _num(condition["lte"])
+        return _compare(fact, condition["lte"], "lte")
     return False
 
 
@@ -53,7 +70,11 @@ def _render(condition):
 
     fact = condition["fact"]
     if "is_true" in condition:
-        return f"{fact} es verdadero" if condition["is_true"] else f"{fact} no es verdadero"
+        return (
+            f"{fact} es verdadero"
+            if condition["is_true"]
+            else f"{fact} no es verdadero"
+        )
     if "is_false" in condition:
         return f"{fact} es falso" if condition["is_false"] else f"{fact} no es falso"
     if "equals" in condition:
@@ -89,4 +110,7 @@ class RuleEngine:
                     }
                 )
         applied.sort(key=lambda r: r["priority"])
-        return {"applied": applied, "conclusion": applied[0]["conclusion"] if applied else None}
+        return {
+            "applied": applied,
+            "conclusion": applied[0]["conclusion"] if applied else None,
+        }

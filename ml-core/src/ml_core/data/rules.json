@@ -4,7 +4,7 @@
     "name": "Control de roya en época de lluvias",
     "condition": {
       "and": [
-        { "fact": "sintoma", "equals": "pustulas_amarillas" },
+        { "fact": "enfermedad", "equals": "RUST" },
         { "fact": "estacion", "equals": "lluvias" }
       ]
     },
@@ -16,7 +16,7 @@
     "name": "Cercospora asociada a estrés hídrico",
     "condition": {
       "and": [
-        { "fact": "sintoma", "equals": "manchas_circulares" },
+        { "fact": "enfermedad", "equals": "CERCOSPORA" },
         { "fact": "estres_hidrico", "is_true": true }
       ]
     },

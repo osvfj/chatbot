@@ -9,14 +9,23 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from ..core.sentiment import analyze as analyze_sentiment
-from ..core.dialogue import choose_question, discrepancy, question as dialogue_question, update as update_dialogue
+from ..core.dialogue import (
+    choose_question,
+    discrepancy,
+    question as dialogue_question,
+    update as update_dialogue,
+)
 from ..core.nlp import extract_evidence
 from ..db import connect
 from ..security import now_iso, require_user
 from ..services import bundle, knowledge, learner, rules
 
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog.json"
-VISION_IDS = {"HEALTHY": "healthy", "RUST": "leaf-rust", "RED_SPIDER_MITE": "red-spider-mite"}
+VISION_IDS = {
+    "HEALTHY": "healthy",
+    "RUST": "leaf-rust",
+    "RED_SPIDER_MITE": "red-spider-mite",
+}
 VISION_KEYS = {value: key for key, value in VISION_IDS.items()}
 CATALOG = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
 
@@ -32,7 +41,9 @@ SYSTEM_PROMPT = (
     "Cuando exista conocimiento recuperado, úsalo como fuente principal y no inventes recomendaciones que lo contradigan."
 )
 
-DEFAULT_ENDPOINT = os.environ.get("ML_CORE_LLM_ENDPOINT", "https://opencode.ai/zen/v1/chat/completions")
+DEFAULT_ENDPOINT = os.environ.get(
+    "ML_CORE_LLM_ENDPOINT", "https://opencode.ai/zen/v1/chat/completions"
+)
 DEFAULT_MODEL = os.environ.get("ML_CORE_LLM_MODEL", "deepseek-v4-flash-free")
 MOCK = os.environ.get("ML_CORE_LLM_MOCK") == "1"
 
@@ -99,30 +110,56 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
     bloques = [content]
     deteccion = _contexto_deteccion(foto)
     if deteccion:
-        bloques.append("[Análisis de imagen]\n" + json.dumps(deteccion, ensure_ascii=False))
+        bloques.append(
+            "[Análisis de imagen]\n" + json.dumps(deteccion, ensure_ascii=False)
+        )
     prediccion = bundle.predict(content)
     sentimiento = analyze_sentiment(content) if analyze_user_text else None
-    evidence = extract_evidence(content) if analyze_user_text else {
-        "symptoms": [],
-        "plant_parts": [],
-        "colors": [],
-        "duration": None,
-        "severity": "unknown",
-    }
+    evidence = (
+        extract_evidence(content)
+        if analyze_user_text
+        else {
+            "symptoms": [],
+            "plant_parts": [],
+            "colors": [],
+            "duration": None,
+            "severity": "unknown",
+        }
+    )
     knowledge_query = content
     if deteccion is not None:
-        knowledge_query += " " + str(deteccion.get("enfermedad") or "") + " " + str(deteccion.get("id_enfermedad") or "")
-    knowledge_query += " " + " ".join(evidence["symptoms"] + evidence["colors"] + evidence["plant_parts"])
-    knowledge_result = knowledge.search(knowledge_query, "astar") if knowledge_query.strip() else {"found": False, "path": []}
+        knowledge_query += (
+            " "
+            + str(deteccion.get("enfermedad") or "")
+            + " "
+            + str(deteccion.get("id_enfermedad") or "")
+        )
+    knowledge_query += " " + " ".join(
+        evidence["symptoms"] + evidence["colors"] + evidence["plant_parts"]
+    )
+    knowledge_result = (
+        knowledge.search(knowledge_query, "astar")
+        if knowledge_query.strip()
+        else {"found": False, "path": []}
+    )
     knowledge_result["query"] = knowledge_query
     policy = {
-        "tone": "empathetic" if sentimiento is not None and sentimiento["label"] == "negativo" else "clear",
-        "verbosity": "short" if sentimiento is not None and sentimiento["label"] == "negativo" else "normal",
-        "must_not_confirm_diagnosis": deteccion is not None and deteccion["status"] != "detected",
-        "ask_for_evidence_if_empty": not any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
+        "tone": "empathetic"
+        if sentimiento is not None and sentimiento["label"] == "negativo"
+        else "clear",
+        "verbosity": "short"
+        if sentimiento is not None and sentimiento["label"] == "negativo"
+        else "normal",
+        "must_not_confirm_diagnosis": deteccion is not None
+        and deteccion["status"] != "detected",
+        "ask_for_evidence_if_empty": not any(
+            evidence[key] for key in ("symptoms", "plant_parts", "colors")
+        ),
     }
     confidence = float((deteccion or {}).get("confianza") or 0.0)
-    confidence_band = "high" if confidence >= 0.75 else "medium" if confidence >= 0.55 else "low"
+    confidence_band = (
+        "high" if confidence >= 0.75 else "medium" if confidence >= 0.55 else "low"
+    )
     learner_state = ":".join(
         (
             str(prediccion["ensemble"]),
@@ -134,7 +171,9 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
     selected_source = learner.choose(learner_state)
     intent_policy = _intent_policy(prediccion, foto, evidence)
     facts = _rule_facts(content, prediccion, evidence, deteccion)
-    facts["sentiment"] = sentimiento["label"] if sentimiento is not None else "structured"
+    facts["sentiment"] = (
+        sentimiento["label"] if sentimiento is not None else "structured"
+    )
     rule_result = rules.evaluate(facts)
     policy["selected_source"] = selected_source
     policy["learner_state"] = learner_state
@@ -146,7 +185,7 @@ def _contexto_consulta(content, foto, analyze_user_text=True):
                 "intencion": prediccion,
                 "sentimiento": sentimiento,
                 "evidencia_pln": evidence,
-            "politica_dialogo": policy,
+                "politica_dialogo": policy,
                 "conocimiento_recuperado": knowledge_result,
             },
             ensure_ascii=False,
@@ -171,38 +210,95 @@ def _intent_policy(prediction, foto, evidence):
     has_evidence = any(evidence[key] for key in ("symptoms", "plant_parts", "colors"))
     if intent == "analizar_foto":
         if foto is None:
-            return {"action": "request_photo", "must_have": ["photo"], "max_questions": 0}
-        return {"action": "visual_diagnosis", "must_have": ["photo", "visual_confirmation"], "max_questions": 3}
+            return {
+                "action": "request_photo",
+                "must_have": ["photo"],
+                "max_questions": 0,
+            }
+        return {
+            "action": "visual_diagnosis",
+            "must_have": ["photo", "visual_confirmation"],
+            "max_questions": 3,
+        }
     if intent in ("roya", "manejo_integrado", "nutricion", "riego"):
-        return {"action": "retrieve_domain_knowledge", "topic": intent, "must_have": [], "max_questions": 1}
+        return {
+            "action": "retrieve_domain_knowledge",
+            "topic": intent,
+            "must_have": [],
+            "max_questions": 1,
+        }
     if not has_evidence:
-        return {"action": "ask_for_description", "must_have": ["symptom_or_photo"], "max_questions": 1}
+        return {
+            "action": "ask_for_description",
+            "must_have": ["symptom_or_photo"],
+            "max_questions": 1,
+        }
     return {"action": "answer_with_context", "must_have": [], "max_questions": 0}
 
 
 def _rule_facts(content, prediction, evidence, detection):
     normalized = content.casefold()
     percentage_match = re.search(r"(\d+(?:[.,]\d+)?)\s*%", normalized)
-    hectares_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:hectáreas|hectareas|ha)\b", normalized)
-    percentage = float(percentage_match.group(1).replace(",", ".")) if percentage_match else None
-    hectares = float(hectares_match.group(1).replace(",", ".")) if hectares_match else None
+    hectares_match = re.search(
+        r"(\d+(?:[.,]\d+)?)\s*(?:hectáreas|hectareas|ha)\b", normalized
+    )
+    percentage = (
+        float(percentage_match.group(1).replace(",", ".")) if percentage_match else None
+    )
+    hectares = (
+        float(hectares_match.group(1).replace(",", ".")) if hectares_match else None
+    )
     symptoms = set(evidence["symptoms"])
     colors = set(evidence["colors"])
+    disease_id = (detection or {}).get("id_enfermedad")
     return {
         "intent": prediction["ensemble"],
         "confidence": float((detection or {}).get("confianza") or 0.0),
         "has_photo": detection is not None,
-        "has_evidence": any(evidence[key] for key in ("symptoms", "plant_parts", "colors")),
+        "has_evidence": any(
+            evidence[key] for key in ("symptoms", "plant_parts", "colors")
+        ),
         "detector_status": (detection or {}).get("status"),
-        "sintoma": "pustulas_amarillas" if "polvo" in symptoms and ("amarillo" in colors or "naranja" in colors) else "manchas_circulares" if "manchas" in symptoms else "lesiones_grises" if "gris" in colors else None,
-        "estacion": "lluvias" if any(word in normalized for word in ("lluvia", "lluvias", "lloviendo")) else None,
-        "estres_hidrico": any(word in normalized for word in ("sequia", "sequía", "sed", "falta de agua")),
-        "plaga": "broca" if prediction["ensemble"] == "broca" or "broca" in normalized else "minador" if prediction["ensemble"] == "minador" or "minador" in normalized else None,
-        "infestacion_pct": percentage if prediction["ensemble"] == "broca" or "broca" in normalized else None,
-        "hojas_minadas_pct": percentage if prediction["ensemble"] == "minador" or "minador" in normalized else None,
-        "enemigos_naturales": any(word in normalized for word in ("enemigo natural", "enemigos naturales", "depredador")),
-        "sombra_excesiva": any(word in normalized for word in ("sombra excesiva", "mucha sombra", "muy sombreado")),
-        "caficultor": any(word in normalized for word in ("caficultor", "productor de café", "productor de cafe")),
+        # Enfermedad confirmada por visión o por la decisión del diálogo
+        # (RUST, CERCOSPORA, RED_SPIDER_MITE, HEALTHY, PHOMA, LEAF-MINER...).
+        "enfermedad": VISION_KEYS.get(disease_id, str(disease_id or "").upper())
+        or None,
+        "sintoma": "pustulas_amarillas"
+        if "polvo" in symptoms and ("amarillo" in colors or "naranja" in colors)
+        else "lesiones_grises"
+        if "gris" in colors
+        else "manchas_circulares"
+        if "manchas" in symptoms
+        else None,
+        "estacion": "lluvias"
+        if any(word in normalized for word in ("lluvia", "lluvias", "lloviendo"))
+        else None,
+        "estres_hidrico": any(
+            word in normalized for word in ("sequia", "sequía", "sed", "falta de agua")
+        ),
+        "plaga": "broca"
+        if prediction["ensemble"] == "broca" or "broca" in normalized
+        else "minador"
+        if prediction["ensemble"] == "minador" or "minador" in normalized
+        else None,
+        "infestacion_pct": percentage
+        if prediction["ensemble"] == "broca" or "broca" in normalized
+        else None,
+        "hojas_minadas_pct": percentage
+        if prediction["ensemble"] == "minador" or "minador" in normalized
+        else None,
+        "enemigos_naturales": any(
+            word in normalized
+            for word in ("enemigo natural", "enemigos naturales", "depredador")
+        ),
+        "sombra_excesiva": any(
+            word in normalized
+            for word in ("sombra excesiva", "mucha sombra", "muy sombreado")
+        ),
+        "caficultor": any(
+            word in normalized
+            for word in ("caficultor", "productor de café", "productor de cafe")
+        ),
         "hectareas": hectares,
     }
 
@@ -215,17 +311,39 @@ def _pregunta_diagnostico(foto):
 
 def _get_dialogue_state(chat_id, finca_id):
     conn = connect()
-    row = conn.execute("SELECT * FROM dialogo_estado WHERE chat_id = ? AND finca_id = ?", (chat_id, finca_id)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM dialogo_estado WHERE chat_id = ? AND finca_id = ?",
+        (chat_id, finca_id),
+    ).fetchone()
     conn.close()
     return row
 
 
-def _save_dialogue_state(chat_id, finca_id, foto_id, question_id, number, hypotheses, evidence, initial_vision=None):
+def _save_dialogue_state(
+    chat_id,
+    finca_id,
+    foto_id,
+    question_id,
+    number,
+    hypotheses,
+    evidence,
+    initial_vision=None,
+):
     conn = connect()
     conn.execute(
         "INSERT INTO dialogo_estado (chat_id, finca_id, foto_id, pregunta_id, pregunta_numero, hipotesis, evidencia, vision_inicial, actualizado_en) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chat_id) DO UPDATE SET foto_id=excluded.foto_id, pregunta_id=excluded.pregunta_id, pregunta_numero=excluded.pregunta_numero, hipotesis=excluded.hipotesis, evidencia=excluded.evidencia, vision_inicial=excluded.vision_inicial, actualizado_en=excluded.actualizado_en",
-        (chat_id, finca_id, foto_id, question_id, number, json.dumps(hypotheses), json.dumps(evidence), json.dumps(initial_vision if initial_vision is not None else hypotheses), now_iso()),
+        (
+            chat_id,
+            finca_id,
+            foto_id,
+            question_id,
+            number,
+            json.dumps(hypotheses),
+            json.dumps(evidence),
+            json.dumps(initial_vision if initial_vision is not None else hypotheses),
+            now_iso(),
+        ),
     )
     conn.commit()
     conn.close()
@@ -245,24 +363,48 @@ def _update_final_photo(foto_id, decision):
     info = CATALOG.get(disease_id, {})
     top_predictions = [
         {"disease_id": VISION_IDS.get(key, key.lower()), "confidence": value}
-        for key, value in sorted(decision["hypotheses"].items(), key=lambda item: -item[1])
+        for key, value in sorted(
+            decision["hypotheses"].items(), key=lambda item: -item[1]
+        )
     ]
     conn = connect()
     conn.execute(
         "UPDATE foto SET disease_id=?, disease_name=?, description=?, confidence=?, severity=?, advice=?, detector_status=?, top_predictions=? WHERE id=?",
-        (disease_id, info.get("name", disease_id), info.get("description", ""), decision["confidence"], info.get("severity", ""), info.get("advice", ""), "confirmed_dialogue", json.dumps(top_predictions, ensure_ascii=False), foto_id),
+        (
+            disease_id,
+            info.get("name", disease_id),
+            info.get("description", ""),
+            decision["confidence"],
+            info.get("severity", ""),
+            info.get("advice", ""),
+            "confirmed_dialogue",
+            json.dumps(top_predictions, ensure_ascii=False),
+            foto_id,
+        ),
     )
     conn.commit()
     conn.close()
 
 
-def _persistir(chat_id, finca_id, rol, contenido, foto_id=None, sentimiento=None, intencion=None):
+def _persistir(
+    chat_id, finca_id, rol, contenido, foto_id=None, sentimiento=None, intencion=None
+):
     mensaje_id = str(uuid4())
     conn = connect()
     conn.execute(
         "INSERT INTO mensaje (id, chat_id, finca_id, rol, contenido, sentimiento, intencion, foto_id, creado_en) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (mensaje_id, chat_id, finca_id, rol, contenido, sentimiento, intencion, foto_id, now_iso()),
+        (
+            mensaje_id,
+            chat_id,
+            finca_id,
+            rol,
+            contenido,
+            sentimiento,
+            intencion,
+            foto_id,
+            now_iso(),
+        ),
     )
     conn.commit()
     conn.close()
@@ -270,7 +412,10 @@ def _persistir(chat_id, finca_id, rol, contenido, foto_id=None, sentimiento=None
 
 
 def _stream_mock():
-    partes = ["El modelo de visión detectó la enfermedad. ", "Aquí van las recomendaciones de manejo integrado."]
+    partes = [
+        "El modelo de visión detectó la enfermedad. ",
+        "Aquí van las recomendaciones de manejo integrado.",
+    ]
     for parte in partes:
         chunk = {"choices": [{"delta": {"content": parte}}]}
         yield "data: " + json.dumps(chunk, ensure_ascii=False) + "\n\n"
@@ -282,7 +427,11 @@ def _classical_response(context, decision):
     if context["sentiment"] is not None and context["sentiment"]["label"] == "negativo":
         parts.append("Entiendo tu preocupación. ")
     if decision is not None:
-        names = {"HEALTHY": "hoja sana", "RUST": "roya del cafeto", "RED_SPIDER_MITE": "arañita roja"}
+        names = {
+            "HEALTHY": "hoja sana",
+            "RUST": "roya del cafeto",
+            "RED_SPIDER_MITE": "arañita roja",
+        }
         hypothesis = decision["top_hypothesis"]
         parts.append(
             "La evidencia disponible sugiere "
@@ -294,11 +443,17 @@ def _classical_response(context, decision):
     elif context["knowledge"].get("found"):
         parts.append(str(context["knowledge"].get("response") or ""))
     elif context["intent"]["ensemble"] == "saludo":
-        parts.append("¡Hola! Soy Cafebot. Puedo ayudarte a analizar una hoja de cafeto y consultar información sobre enfermedades, plagas y manejo integrado.")
+        parts.append(
+            "¡Hola! Soy Cafebot. Puedo ayudarte a analizar una hoja de cafeto y consultar información sobre enfermedades, plagas y manejo integrado."
+        )
     elif context["intent"]["ensemble"] == "despedida":
-        parts.append("Hasta luego. Recuerda monitorear el cafetal y consultar a un técnico si observas cambios importantes.")
+        parts.append(
+            "Hasta luego. Recuerda monitorear el cafetal y consultar a un técnico si observas cambios importantes."
+        )
     elif context["intent"]["ensemble"] == "agradecimiento":
-        parts.append("Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía.")
+        parts.append(
+            "Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía."
+        )
     else:
         parts.append(
             "Puedo ayudarte a analizar una fotografía, describir síntomas del cafeto o consultar información sobre roya, arañita roja y manejo integrado."
@@ -307,7 +462,9 @@ def _classical_response(context, decision):
         parts.append("\n\nSiguiente paso: " + context["detection"]["recomendacion"])
     applied = context["rules"].get("applied", [])
     if applied:
-        parts.append("\n\nRegla aplicada: " + applied[0]["conclusion"])
+        parts.append(
+            "\n\nRegla aplicada (" + applied[0]["id"] + "): " + applied[0]["conclusion"]
+        )
     return "".join(parts)
 
 
@@ -323,12 +480,27 @@ def _stream_zen(messages, api_key, model, endpoint):
         "POST",
         endpoint,
         json={"model": model, "messages": messages, "temperature": 0.4, "stream": True},
-        headers={"content-type": "application/json", "authorization": "Bearer " + api_key, "accept": "text/event-stream"},
+        headers={
+            "content-type": "application/json",
+            "authorization": "Bearer " + api_key,
+            "accept": "text/event-stream",
+        },
         timeout=90,
     ) as response:
         if response.status_code != 200:
             body = response.read().decode()
-            yield "data: " + json.dumps({"error": {"type": "status_error", "message": f"{response.status_code}: {body[:300]}"}}) + "\n\n"
+            yield (
+                "data: "
+                + json.dumps(
+                    {
+                        "error": {
+                            "type": "status_error",
+                            "message": f"{response.status_code}: {body[:300]}",
+                        }
+                    }
+                )
+                + "\n\n"
+            )
             return
         for linea in response.iter_lines():
             yield linea + "\n"
@@ -356,10 +528,19 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     if historia and historia[-1]["role"] == "user":
         historia = historia[:-1]
     is_dialogue_answer = dialogue_state is not None
-    analysis_text = str(body.get("free_text") or content) if is_dialogue_answer else content
-    contexto = _contexto_consulta(analysis_text, foto, analyze_user_text=not is_dialogue_answer or bool(body.get("free_text")))
+    analysis_text = (
+        str(body.get("free_text") or content) if is_dialogue_answer else content
+    )
+    contexto = _contexto_consulta(
+        analysis_text,
+        foto,
+        analyze_user_text=not is_dialogue_answer or bool(body.get("free_text")),
+    )
     pregunta = _pregunta_diagnostico(foto) if dialogue_state is None else None
-    if dialogue_state is None and contexto["intent_policy"]["action"] == "request_photo":
+    if (
+        dialogue_state is None
+        and contexto["intent_policy"]["action"] == "request_photo"
+    ):
         pregunta = dialogue_question("photo_followup")
     decision = None
     bayesian_state = None
@@ -372,14 +553,20 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         if foto_id and foto_id != dialogue_state["foto_id"]:
             followup_detection = _contexto_deteccion(foto)
             followup_hypotheses = {
-                VISION_KEYS.get(item["disease_id"], item["disease_id"]): float(item["confidence"] or 0.0)
+                VISION_KEYS.get(item["disease_id"], item["disease_id"]): float(
+                    item["confidence"] or 0.0
+                )
                 for item in (followup_detection or {}).get("top_predictions", [])
                 if item.get("disease_id")
             }
             if followup_hypotheses:
                 keys = set(hypotheses) | set(followup_hypotheses)
                 hypotheses = {
-                    key: (float(hypotheses.get(key, 0.0)) + float(followup_hypotheses.get(key, 0.0))) / 2
+                    key: (
+                        float(hypotheses.get(key, 0.0))
+                        + float(followup_hypotheses.get(key, 0.0))
+                    )
+                    / 2
                     for key in keys
                 }
                 evidence.append({"photo": foto_id, "vision": followup_hypotheses})
@@ -392,7 +579,9 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
             free_text,
             dialogue_state["pregunta_id"],
         )
-        evidence.append({"option": answer_id, "text": free_text, "pln": free_text_evidence})
+        evidence.append(
+            {"option": answer_id, "text": free_text, "pln": free_text_evidence}
+        )
         try:
             initial_vision = json.loads(dialogue_state["vision_inicial"])
         except (TypeError, json.JSONDecodeError):
@@ -407,36 +596,94 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         }
         next_number = int(dialogue_state["pregunta_numero"]) + 1
         if (confidence < 0.75 or conflict >= 0.55) and next_number <= 3:
-            next_question = "photo_followup" if conflict >= 0.55 else choose_question(free_text_evidence, next_number, answer_id, probabilities)
-            _save_dialogue_state(chat_id, auth["finca"], dialogue_state["foto_id"], next_question, next_number, probabilities, evidence)
+            next_question = (
+                "photo_followup"
+                if conflict >= 0.55
+                else choose_question(
+                    free_text_evidence, next_number, answer_id, probabilities
+                )
+            )
+            _save_dialogue_state(
+                chat_id,
+                auth["finca"],
+                dialogue_state["foto_id"],
+                next_question,
+                next_number,
+                probabilities,
+                evidence,
+            )
             pregunta = dialogue_question(question_id=next_question, number=next_number)
         else:
             _clear_dialogue_state(chat_id)
-            decision = {"hypotheses": probabilities, "top_hypothesis": top, "confidence": confidence, "evidence": evidence}
+            decision = {
+                "hypotheses": probabilities,
+                "top_hypothesis": top,
+                "confidence": confidence,
+                "evidence": evidence,
+            }
             _update_final_photo(dialogue_state["foto_id"], decision)
-            contexto["prompt"] += "\n\n[Decisión bayesiana]\n" + json.dumps(decision, ensure_ascii=False)
+            # Las reglas se re-evalúan con la enfermedad confirmada por el
+            # diagnóstico del diálogo.
+            decision_detection = {
+                "status": "confirmed_dialogue",
+                "id_enfermedad": VISION_IDS.get(top),
+                "confianza": confidence,
+            }
+            contexto["rules"] = rules.evaluate(
+                _rule_facts(
+                    analysis_text,
+                    contexto["intent"],
+                    contexto["evidence"],
+                    decision_detection,
+                )
+            )
+            contexto["prompt"] += "\n\n[Decisión bayesiana]\n" + json.dumps(
+                decision, ensure_ascii=False
+            )
     elif pregunta is not None:
         initial = contexto["detection"] or {}
-        initial_hypotheses = {VISION_KEYS.get(item["disease_id"], item["disease_id"]): float(item["confidence"] or 0.0) for item in initial.get("top_predictions", []) if item.get("disease_id")}
+        initial_hypotheses = {
+            VISION_KEYS.get(item["disease_id"], item["disease_id"]): float(
+                item["confidence"] or 0.0
+            )
+            for item in initial.get("top_predictions", [])
+            if item.get("disease_id")
+        }
         if not initial_hypotheses and initial.get("id_enfermedad"):
-            initial_hypotheses = {initial["id_enfermedad"]: float(initial.get("confianza") or 0.0)}
-        _save_dialogue_state(chat_id, auth["finca"], foto_id, pregunta["id"], 1, initial_hypotheses, [], initial_hypotheses)
+            initial_hypotheses = {
+                initial["id_enfermedad"]: float(initial.get("confianza") or 0.0)
+            }
+        _save_dialogue_state(
+            chat_id,
+            auth["finca"],
+            foto_id,
+            pregunta["id"],
+            1,
+            initial_hypotheses,
+            [],
+            initial_hypotheses,
+        )
         bayesian_state = {
             "hypotheses": initial_hypotheses,
-            "top_hypothesis": max(initial_hypotheses, key=initial_hypotheses.get) if initial_hypotheses else None,
+            "top_hypothesis": max(initial_hypotheses, key=initial_hypotheses.get)
+            if initial_hypotheses
+            else None,
             "confidence": max(initial_hypotheses.values(), default=0.0),
             "evidence": [],
         }
-    contexto["prompt"] += "\n\n[Estado interno de decisión; no mostrar literalmente al usuario]\n" + json.dumps(
-        {
-            "evidencia_pln": contexto["evidence"],
-            "conocimiento_recuperado": contexto["knowledge"],
-            "sentimiento": contexto["sentiment"],
-            "politica_dialogo": contexto["policy"],
-            "reglas": contexto["rules"],
-            "estado_bayesiano": bayesian_state,
-        },
-        ensure_ascii=False,
+    contexto["prompt"] += (
+        "\n\n[Estado interno de decisión; no mostrar literalmente al usuario]\n"
+        + json.dumps(
+            {
+                "evidencia_pln": contexto["evidence"],
+                "conocimiento_recuperado": contexto["knowledge"],
+                "sentimiento": contexto["sentiment"],
+                "politica_dialogo": contexto["policy"],
+                "reglas": contexto["rules"],
+                "estado_bayesiano": bayesian_state,
+            },
+            ensure_ascii=False,
+        )
     )
     instrucciones = [SYSTEM_PROMPT]
     if decision is not None:
@@ -462,11 +709,17 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
     )
     selected_source = contexto["policy"].get("selected_source")
     if selected_source == "knowledge_guided":
-        instrucciones.append("FUENTE SELECCIONADA: prioriza el conocimiento recuperado del grafo y resume sus hechos.")
+        instrucciones.append(
+            "FUENTE SELECCIONADA: prioriza el conocimiento recuperado del grafo y resume sus hechos."
+        )
     elif selected_source == "classification_guided":
-        instrucciones.append("FUENTE SELECCIONADA: prioriza la explicación de clasificación y la evidencia observable antes de ampliar la respuesta.")
+        instrucciones.append(
+            "FUENTE SELECCIONADA: prioriza la explicación de clasificación y la evidencia observable antes de ampliar la respuesta."
+        )
     else:
-        instrucciones.append("FUENTE SELECCIONADA: puedes redactar con el LLM, pero respeta siempre las reglas, la evidencia y la decisión bayesiana.")
+        instrucciones.append(
+            "FUENTE SELECCIONADA: puedes redactar con el LLM, pero respeta siempre las reglas, la evidencia y la decisión bayesiana."
+        )
     if contexto["sentiment"] is not None and contexto["policy"]["tone"] == "empathetic":
         instrucciones.append(
             "POLÍTICA DE TONO: el usuario parece preocupado o frustrado. Valida brevemente su preocupación, "
@@ -478,37 +731,49 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
 
     def generar():
         yield "event: context\n"
-        yield "data: " + json.dumps(
-            {
-                "detection": contexto["detection"],
-                "intent": contexto["intent"],
-                "sentiment": contexto["sentiment"],
-            "evidence": contexto["evidence"],
-                "policy": contexto["policy"],
-                "rules": contexto["rules"],
-                "knowledge": contexto["knowledge"],
-                "intent_policy": contexto["intent_policy"],
-            "bayesian": bayesian_state,
-                "question": pregunta,
-                "decision": decision,
-            },
-            ensure_ascii=False,
-        ) + "\n\n"
+        yield (
+            "data: "
+            + json.dumps(
+                {
+                    "detection": contexto["detection"],
+                    "intent": contexto["intent"],
+                    "sentiment": contexto["sentiment"],
+                    "evidence": contexto["evidence"],
+                    "policy": contexto["policy"],
+                    "rules": contexto["rules"],
+                    "knowledge": contexto["knowledge"],
+                    "intent_policy": contexto["intent_policy"],
+                    "bayesian": bayesian_state,
+                    "question": pregunta,
+                    "decision": decision,
+                },
+                ensure_ascii=False,
+            )
+            + "\n\n"
+        )
         if pregunta is not None:
             return
-        stream = _stream_zen(mensajes, api_key, model, endpoint) if mode == "llm" else _stream_classical(_classical_response(contexto, decision))
+        stream = (
+            _stream_zen(mensajes, api_key, model, endpoint)
+            if mode == "llm"
+            else _stream_classical(_classical_response(contexto, decision))
+        )
         texto = []
         for linea in stream:
             yield linea
             if linea.startswith("data: ") and linea != "data: [DONE]\n\n":
                 try:
                     payload = json.loads(linea[6:])
-                    delta = payload.get("choices", [{}])[0].get("delta", {}).get("content")
+                    delta = (
+                        payload.get("choices", [{}])[0].get("delta", {}).get("content")
+                    )
                     if delta:
                         texto.append(delta)
                 except (json.JSONDecodeError, IndexError, AttributeError):
                     pass
         if texto:
-            _persistir(chat_id, auth["finca"], "assistant", "".join(texto), foto_id=foto_id)
+            _persistir(
+                chat_id, auth["finca"], "assistant", "".join(texto), foto_id=foto_id
+            )
 
     return StreamingResponse(generar(), media_type="text/event-stream")
