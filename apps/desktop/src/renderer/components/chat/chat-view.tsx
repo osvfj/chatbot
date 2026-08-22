@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MessageSquarePlusIcon } from "lucide-react";
 import { DateTime, Predicate } from "effect";
 import { useNavigate } from "@tanstack/react-router";
@@ -16,6 +16,7 @@ import { dialogueQuestionAtom, learnerDecisionAtom } from "../../lib/streaming";
 import { chatModeAtom, persistChatMode } from "../../lib/zen-settings";
 import { api } from "../../lib/backend";
 import { ChatInput } from "./chat-input";
+import { InspectorPanel } from "./inspector-panel";
 import { MessageList } from "./message-list";
 
 interface ChatViewProps {
@@ -41,6 +42,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const [dialogueQuestion, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
   const [learnerDecision, setLearnerDecision] = useAtom(learnerDecisionAtom);
   const [chatMode, setChatMode] = useAtom(chatModeAtom);
+  const [inspectorAbierto, setInspectorAbierto] = useState(false);
   const busy = isWaiting || uploadPhoto.isPending;
 
   const history = useQuery({
@@ -187,23 +189,34 @@ export function ChatView({ conversationId }: ChatViewProps) {
             </div>
           </div>
         </div>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={busy}
-                onClick={handleNewConversation}
-                aria-label={m.tooltipNewConversation()}
-              >
-                <MessageSquarePlusIcon className="size-4" />
-              </Button>
-            }
-          />
-          <TooltipContent>{m.tooltipNewConversation()}</TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={inspectorAbierto ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setInspectorAbierto((abierto) => !abierto)}
+            aria-label="Inspector del sistema"
+          >
+            Inspector
+          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={busy}
+                  onClick={handleNewConversation}
+                  aria-label={m.tooltipNewConversation()}
+                >
+                  <MessageSquarePlusIcon className="size-4" />
+                </Button>
+              }
+            />
+            <TooltipContent>{m.tooltipNewConversation()}</TooltipContent>
+          </Tooltip>
+        </div>
       </header>
+      {inspectorAbierto && <InspectorPanel />}
       <MessageList
         messages={messages}
         isWaiting={busy}

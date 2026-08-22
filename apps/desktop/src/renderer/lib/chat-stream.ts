@@ -1,43 +1,16 @@
 import { Predicate } from "effect";
 import { BACKEND_URL, getToken } from "./backend";
-import type { DialogueQuestion, LearnerDecision } from "./streaming";
+import type {
+  ChatContext,
+  DecisionResult,
+  DetectionResult,
+  DialogueQuestion,
+  EvidenceResult,
+  IntentPrediction,
+  RulesResult,
+} from "./streaming";
 
-export interface ChatContext {
-  readonly question: DialogueQuestion | null;
-  readonly knowledge?: {
-    readonly query?: string;
-    readonly found?: boolean;
-    readonly algorithm?: string;
-    readonly node?: string;
-    readonly path?: ReadonlyArray<string>;
-    readonly cost?: number | null;
-    readonly response?: string | null;
-  } | null;
-  readonly intent_policy?: {
-    readonly action: string;
-    readonly must_have: ReadonlyArray<string>;
-    readonly max_questions: number;
-  } | null;
-  readonly sentiment?: {
-    readonly label: string;
-    readonly probas: Readonly<Record<string, number>>;
-    readonly confidence: number;
-  } | null;
-  readonly policy?: {
-    readonly tone: string;
-    readonly verbosity: string;
-    readonly must_not_confirm_diagnosis: boolean;
-    readonly ask_for_evidence_if_empty: boolean;
-    readonly learner_state?: string;
-    readonly selected_source?: LearnerDecision["action"];
-  } | null;
-  readonly bayesian?: {
-    readonly hypotheses: Readonly<Record<string, number>>;
-    readonly top_hypothesis: string | null;
-    readonly confidence: number;
-    readonly evidence: ReadonlyArray<unknown>;
-  } | null;
-}
+export type { ChatContext };
 
 export interface ChatStreamOptions {
   readonly chatId: string;
@@ -116,14 +89,17 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
         const payload = JSON.parse(data) as {
           readonly error?: { readonly message?: string };
           readonly choices?: ReadonlyArray<{ readonly delta?: { readonly content?: string } }>;
-          readonly detection?: unknown;
-          readonly intent?: unknown;
+          readonly intent?: IntentPrediction | null;
           readonly question?: DialogueQuestion | null;
           readonly knowledge?: ChatContext["knowledge"];
           readonly intent_policy?: ChatContext["intent_policy"];
           readonly bayesian?: ChatContext["bayesian"];
           readonly sentiment?: ChatContext["sentiment"];
           readonly policy?: ChatContext["policy"];
+          readonly rules?: RulesResult | null;
+          readonly evidence?: EvidenceResult | null;
+          readonly decision?: DecisionResult | null;
+          readonly detection?: DetectionResult | null;
         };
         if (eventName === "context") {
           options.onContext({
@@ -133,6 +109,11 @@ export async function streamChat(options: ChatStreamOptions): Promise<void> {
             bayesian: payload.bayesian ?? null,
             sentiment: payload.sentiment ?? null,
             policy: payload.policy ?? null,
+            intent: payload.intent ?? null,
+            rules: payload.rules ?? null,
+            evidence: payload.evidence ?? null,
+            decision: payload.decision ?? null,
+            detection: payload.detection ?? null,
           });
           eventName = "";
           continue;

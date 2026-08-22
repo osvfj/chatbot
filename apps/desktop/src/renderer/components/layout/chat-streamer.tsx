@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { streamChat } from "../../lib/chat-stream";
 import { messagesAtom } from "../../lib/atoms";
 import {
+  contextAtom,
   dialogueQuestionAtom,
   learnerDecisionAtom,
   pendingReplyAtom,
@@ -19,6 +20,7 @@ export function ChatStreamer() {
   const [, setStreamText] = useAtom(streamTextAtom);
   const [, setDialogueQuestion] = useAtom(dialogueQuestionAtom);
   const [, setLearnerDecision] = useAtom(learnerDecisionAtom);
+  const [, setContext] = useAtom(contextAtom);
   const [, setMessages] = useAtom(messagesAtom);
   const apiKey = useAtomValue(zenApiKeyAtom);
   const model = useAtomValue(zenModelAtom);
@@ -50,6 +52,7 @@ export function ChatStreamer() {
       endpoint: zenEndpoint(account),
       signal: controller.signal,
       onContext: (context) => {
+        setContext(context);
         console.info("[ml-core] Contexto crudo enviado al LLM", context);
         console.groupCollapsed("[Cafebot] Actualización bayesiana");
         console.table(context.bayesian?.hypotheses ?? {});
@@ -120,6 +123,7 @@ export function ChatStreamer() {
     setMessages,
     setDialogueQuestion,
     setLearnerDecision,
+    setContext,
   ]);
 
   return null;
