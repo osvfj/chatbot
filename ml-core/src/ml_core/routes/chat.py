@@ -412,6 +412,24 @@ def _stream_mock():
     yield "data: [DONE]\n\n"
 
 
+_SOCIAL_RESPUESTAS = {
+    "saludo": "¡Hola! Soy Cafebot. Puedo ayudarte a analizar una hoja de cafeto y consultar información sobre enfermedades, plagas y manejo integrado.",
+    "despedida": "Hasta luego. Recuerda monitorear el cafetal y consultar a un técnico si observas cambios importantes.",
+    "agradecimiento": "Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía.",
+}
+
+_NOMBRES_ENFERMEDAD = {
+    "HEALTHY": "hoja sana",
+    "RUST": "roya del cafeto",
+    "RED_SPIDER_MITE": "arañita roja",
+}
+
+
+def _cuerpo_social(ensemble):
+    """Plantillas fijas para mensajes sociales; la fuente no las altera."""
+    return _SOCIAL_RESPUESTAS.get(str(ensemble))
+
+
 def _explicar_clasificacion(intent, evidence):
     """Explicación legible del ensemble y la evidencia para classification_guided."""
     votos = (
@@ -447,65 +465,80 @@ def _explicar_clasificacion(intent, evidence):
     return "\n".join(lineas)
 
 
-def _classical_response(context, decision):
-    parts = []
-    # La fuente elegida por el agente cambia cómo se construye la respuesta;
-    # sin esto, calificar en modo clásico no mediría efecto alguno.
-    selected = context["policy"].get("selected_source")
-    if context["sentiment"] is not None and context["sentiment"]["label"] == "negativo":
-        parts.append("Entiendo tu preocupación. ")
+def _cuerpo_clasificacion(context, decision):
+    """Estrategia classification_guided: transparencia sobre el razonamiento."""
+    lineas = ["Así determiné la respuesta:"]
+    lineas.extend(
+        "• " + linea
+        for linea in _explicar_clasificacion(
+            context["intent"], context["evidence"]
+        ).split("\n")
+    )
     if decision is not None:
-        names = {
-            "HEALTHY": "hoja sana",
-            "RUST": "roya del cafeto",
-            "RED_SPIDER_MITE": "arañita roja",
-        }
-        hypothesis = decision["top_hypothesis"]
-        encabezado = (
+        nombre = _NOMBRES_ENFERMEDAD.get(
+            decision["top_hypothesis"], decision["top_hypothesis"]
+        )
+        lineas.append(
+            f"• Decisión final: {nombre} con {decision['confidence']:.0%} de "
+            "confianza tras combinar la imagen con tus respuestas."
+        )
+    return "\n".join(lineas)
+
+
+def _cuerpo_conocimiento(context, decision):
+    """Estrategia knowledge_guided: el documento agronómico es el cuerpo."""
+    lineas = []
+    if decision is not None:
+        nombre = _NOMBRES_ENFERMEDAD.get(
+            decision["top_hypothesis"], decision["top_hypothesis"]
+        )
+        lineas.append(
+            f"El diagnóstico apunta a {nombre} con una confianza de "
+            f"{decision['confidence']:.0%}."
+        )
+    lineas.append("Esto es lo que dice la base de conocimientos del cafeto:")
+    lineas.append(str(context["knowledge"].get("response") or ""))
+    return "\n\n".join(lineas)
+
+
+def _cuerpo_estandar(context, decision):
+    """Estrategia llm_guided: respuesta directa con el hallazgo principal."""
+    if decision is not None:
+        nombre = _NOMBRES_ENFERMEDAD.get(
+            decision["top_hypothesis"], decision["top_hypothesis"]
+        )
+        return (
             "La evidencia disponible sugiere "
-            + names.get(hypothesis, hypothesis)
+            + nombre
             + " con una confianza de "
             + f"{decision['confidence']:.0%}"
+            + ". Esta es una orientación y no sustituye una revisión técnica."
         )
+    if context["knowledge"].get("found"):
+        return str(context["knowledge"].get("response") or "")
+    return (
+        "Puedo ayudarte a analizar una fotografía, describir síntomas del cafeto "
+        "o consultar información sobre roya, arañita roja y manejo integrado."
+    )
+
+
+def _classical_response(context, decision):
+    # Cada fuente del agente compone una estrategia completa de respuesta;
+    # así calificar en modo clásico mide una preferencia real.
+    selected = context["policy"].get("selected_source")
+    cuerpo = _cuerpo_social(context["intent"]["ensemble"])
+    if cuerpo is None:
         if selected == "classification_guided":
-            parts.append(
-                encabezado
-                + ".\n\n"
-                + _explicar_clasificacion(context["intent"], context["evidence"])
-            )
+            cuerpo = _cuerpo_clasificacion(context, decision)
         elif selected == "knowledge_guided" and context["knowledge"].get("found"):
-            parts.append(
-                encabezado
-                + ".\n\nRecomendaciones de la base de conocimientos:\n"
-                + str(context["knowledge"].get("response") or "")
-            )
+            cuerpo = _cuerpo_conocimiento(context, decision)
         else:
-            parts.append(
-                encabezado
-                + ". Esta es una orientación y no sustituye una revisión técnica.\n\n"
-            )
-    elif context["intent"]["ensemble"] == "saludo":
-        parts.append(str(context["knowledge"].get("response") or ""))
-    elif context["intent"]["ensemble"] == "saludo":
-        parts.append(
-            "¡Hola! Soy Cafebot. Puedo ayudarte a analizar una hoja de cafeto y consultar información sobre enfermedades, plagas y manejo integrado."
-        )
-    elif context["intent"]["ensemble"] == "despedida":
-        parts.append(
-            "Hasta luego. Recuerda monitorear el cafetal y consultar a un técnico si observas cambios importantes."
-        )
-    elif context["intent"]["ensemble"] == "agradecimiento":
-        parts.append(
-            "Con gusto. Si aparece nueva evidencia, puedes describirla o enviar otra fotografía."
-        )
-    elif selected == "classification_guided":
-        parts.append(_explicar_clasificacion(context["intent"], context["evidence"]))
-    elif context["knowledge"].get("found"):
-        parts.append(str(context["knowledge"].get("response") or ""))
-    else:
-        parts.append(
-            "Puedo ayudarte a analizar una fotografía, describir síntomas del cafeto o consultar información sobre roya, arañita roja y manejo integrado."
-        )
+            cuerpo = _cuerpo_estandar(context, decision)
+
+    parts = []
+    if context["sentiment"] is not None and context["sentiment"]["label"] == "negativo":
+        parts.append("Entiendo tu preocupación. ")
+    parts.append(cuerpo)
     if context["detection"] is not None and context["detection"].get("recomendacion"):
         parts.append("\n\nSiguiente paso: " + context["detection"]["recomendacion"])
     applied = context["rules"].get("applied", [])
@@ -604,13 +637,15 @@ def chat(chat_id: str, body: dict, auth=Depends(require_user)):
         learner.reward(chat_id, 0.5)
     elif repite_pregunta and fase_actual != "social" and fase_previa != "social":
         learner.reward(chat_id, -0.5)
-    # El par (estado, acción) de este turno entra al episodio del chat; la
-    # recompensa llegará con la calificación o al cerrar el flujo.
-    learner.track(
-        chat_id,
-        contexto["policy"]["learner_state"],
-        contexto["policy"]["selected_source"],
-    )
+    # Solo los estados de contenido entran al episodio: en los mensajes
+    # sociales la fuente no altera la plantilla, así que no hay ningún
+    # efecto que aprender y calificarlos mediría ruido.
+    if not contexto["policy"]["learner_state"].startswith("social"):
+        learner.track(
+            chat_id,
+            contexto["policy"]["learner_state"],
+            contexto["policy"]["selected_source"],
+        )
     pregunta = _pregunta_diagnostico(foto) if dialogue_state is None else None
     if (
         dialogue_state is None
